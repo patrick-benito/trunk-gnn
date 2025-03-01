@@ -187,3 +187,7 @@ MUJOCO_LOG.TXT
 
 # Data
 *.csv
+*.pt
+
+# Wandb
+wandb/

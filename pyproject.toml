@@ -1,13 +1,14 @@
 [project]
 name = "trunk-gnn"
 version = "0.1.0"
-description = "Add your description here"
+description = "ASL Trunk GNN Model"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "torch>=2.6.0",
     "torch-geometric>=2.6.1",
     "tqdm>=4.67.1",
+    "trunk-sim",
     "wandb>=0.19.7",
 ]
 
@@ -15,3 +16,13 @@ dependencies = [
 dev = [
     "black>=25.1.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ['src']
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+trunk-sim = { path = "../trunk-sim" }

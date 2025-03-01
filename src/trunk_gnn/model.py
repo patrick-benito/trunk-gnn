@@ -7,6 +7,7 @@ from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
 from torch_geometric.data import Data
 
+from trunk_gnn.masks import velocity_mask, position_mask
 
 class MLP(nn.Module):
     def __init__(
@@ -41,12 +42,6 @@ class MLP(nn.Module):
                 layer.weight.data.normal_(0, 1 / math.sqrt(layer.in_features))
                 layer.bias.data.fill_(0)
 
-    def initialize_weights(self):
-        for m in self.model:
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight)
-                nn.init.zeros_(m.bias)
-
     def forward(self, x):
         return self.model(x)
 
@@ -56,24 +51,21 @@ class GNNBlock(MessagePassing):
         self, node_channels_in, edge_channels_in, node_channels_out, edge_channels_out
     ):
         super().__init__(aggr="sum", flow="source_to_target")
-        # self.edge_mlp = MLP(edge_channels*0 + 1*node_channels, 50, hidden_features=150, num_hidden_layers=3) # e' <- f_e(e, x_i, x_j)
-        # self.node_mlp = MLP(node_channels + 50, 2, hidden_features=100, num_hidden_layers=1) # x' <- f_v(x, e)
         self.edge_mlp = MLP(
             edge_channels_in,
             edge_channels_out,
             num_hidden_layers=4,
             hidden_features=150,
-        )
+        ) # e' <- f_e(e, x_i, x_j)
+
         self.node_mlp = MLP(
             node_channels_in + edge_channels_out,
             node_channels_out,
             num_hidden_layers=1,
             hidden_features=100,
-        )
+        ) # x' <- f_v(x, e)
 
-    def forward(self, x, edge_index, edge_attr):
-        # edge_index, _ = add_self_loops(edge_index) #TODO: add self loops
-
+    def forward(self, x, edge_index, edge_attr=None):
         # Update edge features
         marsh_edge_attr = self.update_edges(x, edge_index, edge_attr)
 
@@ -82,51 +74,48 @@ class GNNBlock(MessagePassing):
 
         return x, edge_attr
 
-    def update_edges(self, x, edge_index, edge_attr):
-        # Marshalling TODO: stack with edge_attr
+    def update_edges(self, x, edge_index, edge_attr=None):
         sender, receiver = edge_index
         diff = x[receiver] - x[sender]
-        m = torch.cat([x[receiver], x[sender], diff], dim=1)
-        return self.edge_mlp(m)
+
+        return self.edge_mlp(diff)
 
     def message(self, marsh_edge_attr):
         return marsh_edge_attr
 
     def update(self, aggr_out, x):
-        x = self.node_mlp(torch.cat([x[:, :], aggr_out], dim=1))
+
+        x = self.node_mlp(torch.cat([x@velocity_mask, aggr_out], dim=1))
         return x
 
 
-class ResidualGNN(nn.Module):
-    def __init__(self, node_channels, edge_channels, num_blocks=1):
-        super(ResidualGNN, self).__init__()
+class TrunkGNN(nn.Module):
+    def __init__(self, num_links, num_blocks=1):
+        super(TrunkGNN, self).__init__()
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.layers = nn.ModuleList()
+        self.num_links = num_links
+        self.num_blocks = 1
+        self.dt = 0.01
 
         for _ in range(num_blocks):
             self.layers.append(
                 GNNBlock(
-                    node_channels_in=5,
-                    node_channels_out=2,
-                    edge_channels_in=3 * 5,
+                    node_channels_in=3,
+                    node_channels_out=3,
+                    edge_channels_in=6,
                     edge_channels_out=50,
                 )
             )
 
-        # self.node_encode = MLP(5, 50, layernorm=False)
-        # self.node_decode = MLP(2, 2, layernorm=False, num_hidden_layers=10)
-
-    def forward(self, data: Data):
-        # x = self.node_encode(data.x)
-        edge_attr = data.edge_attr if data.edge_attr is not None else None
-
+    def forward(self, _data: Data):
+        data = _data.clone()
         for layer in self.layers:
-            dx, dedge_attr = layer(data.x, data.edge_index, edge_attr)
-
-            # x += dx
-            # x[:,3:5] = dx
-            # x[:,1:3] += dx * 0.001
-
-        # dx = self.node_decode(dx)
-
-        return Data(x=dx)
+            x = data.x
+            dv, _ = layer(x, data.edge_index, data.edge_attr)
+            
+            x[:,3:] += dv                          # Update velocity
+            x[:,:3] += x@velocity_mask * self.dt   # Update position
+            
+        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=x)

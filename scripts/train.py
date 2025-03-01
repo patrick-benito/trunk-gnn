@@ -1,19 +1,19 @@
 import torch
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
-import tqdm
+from tqdm import tqdm
 import wandb
 import argparse
-import os
-import subprocess
 
-from trunk_gnn.gnn import ResidualGNN
-from trunk_gnn.algos.utils.n_body_data_set import NBodyDataset
+from trunk_gnn.data import TrunkGraphDataset
+
+from trunk_gnn.model import TrunkGNN
+
 from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
+print(f"Using device: {device}")
 def train(
     args,
     model,
@@ -31,7 +31,7 @@ def train(
 
     model.to(device)
 
-    for _ in tqdm.tqdm(range(args.num_epochs)):
+    for _ in tqdm(range(args.num_epochs)):
         epoch(
             model,
             optimizer,
@@ -48,19 +48,12 @@ def train(
 def main(args):
     init_wandb(args)
 
-    data_set = NBodyDataset(
-        root=args.data_set_folder,
-        normalization_strategy=args.normalization_strategy,
-        device=device,
-    )
+    dataset = TrunkGraphDataset(args.data_set_folder, device=device)
     train_data_set, validation_data_set, test_data_set = torch.utils.data.random_split(
-        data_set, [0.72, 0.14, 0.14]
+        dataset, [0.72, 0.14, 0.14]
     )
 
-    model = ResidualGNN(
-        node_channels=data_set.node_channels, edge_channels=data_set.edge_channels
-    )
-
+    model = TrunkGNN(num_links=dataset.num_links)
     train(
         args,
         model,
@@ -80,7 +73,7 @@ def main(args):
     )
 
     if args.save_model:
-        save_model(model, data_set)
+        save_model(model, dataset)
 
     wandb.finish()
 
@@ -91,8 +84,8 @@ def get_args():
     parser.add_argument(
         "--data_set_folder",
         type=str,
-        default="data/train/",
-        help="Name of the dataset.",
+        default="data/no_mass_100_train/",
+        help="Path of the dataset file.",
     )
 
     parser.add_argument(

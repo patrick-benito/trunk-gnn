@@ -4,7 +4,7 @@ from argparse import Namespace
 import wandb
 import yaml
 
-import train
+import train as train
 
 
 def load_sweep_config(file_path):
@@ -17,9 +17,9 @@ def train_sweep(config=None):
         config = wandb.config
 
         train.main(
+            #TODO load normal args and then override with config
             Namespace(
-                data_set_folder="data/sim_data/n_body_test_1",
-                infer_data_set_folder="data/sim_data/n_body_test_1",
+                data_set_folder="data/no_mass_100_train",
                 num_epochs=config.num_epochs,
                 batch_size=config.batch_size,
                 learning_rate=config.learning_rate,
@@ -30,7 +30,6 @@ def train_sweep(config=None):
                 wandb=True,
                 notes="",
                 save_model=True,
-                infer=False,
                 scheduler_patience=config.scheduler_patience,
             )
         )
@@ -38,7 +37,7 @@ def train_sweep(config=None):
 
 def main():
     sweep_config = load_sweep_config("config/sweep_config.yaml")
-    sweep_id = wandb.sweep(sweep_config, project="GNN-Sweep-Test")
+    sweep_id = wandb.sweep(sweep_config, project="trunk-gnn-0.1.0-sweep")
     wandb.agent(sweep_id, function=train_sweep)
 
 

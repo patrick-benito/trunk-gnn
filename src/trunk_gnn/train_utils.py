@@ -2,11 +2,14 @@ import wandb
 import torch
 import subprocess
 import os
+import numpy as np
+from typing import Optional
+
 
 def init_wandb(args):
     if args.wandb:
         wandb.init(
-            project="ResidualGNN-test-1",
+            project="trunk-gnn-0.1.0",
             config={
                 "learning_rate": args.learning_rate,
                 "data_set_folder": args.data_set_folder,
@@ -31,28 +34,57 @@ def set_seed(seed=None):
         print(f"[WARNING] Manual seed is set to {seed}.")
 
 
+def save_model(model, dataset):
+    if os.path.exists("artifacts"):
+        os.removedirs("artifacts")
+    os.makedirs("artifacts")
+
+    model_artifact = wandb.Artifact("ResidualGNN-0-debug", type="model")
+
+    torch.save(model, os.path.join("artifacts", "model.pt"))
+    model_artifact.add_file(os.path.join("artifacts", "model.pt"))
+
+    torch.save(model.state_dict(), os.path.join("artifacts", "model_state_dict.pth"))
+    model_artifact.add_file(os.path.join("artifacts", "model_state_dict.pth"))
+
+    model_data = {
+        "model_state_dict": model.state_dict(),
+        "normalization_metrics": dataset.metrics,
+    }
+
+    torch.save(model_data, os.path.join("artifacts", "model_data.pth"))
+    model_artifact.add_file(os.path.join("artifacts", "model_data.pth"))
+
+    for file in os.listdir(os.path.join("src", "trunk_gnn")):
+        if ".py" in file:
+            model_artifact.add_file(os.path.join("src", "trunk_gnn", file))
+
+    model_artifact.save()
+
+
 def epoch(
-    model,
-    optimizer,
-    criterion,
-    scheduler,
-    train_data_loader,
-    validation_data_loader,
-    test_data_loader,
-    device,
-    gradient_clipping_max_norm=None,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    criterion: torch.nn.Module,
+    scheduler: torch.optim.lr_scheduler.LRScheduler,
+    train_data_loader: torch.utils.data.DataLoader,
+    validation_data_loader: torch.utils.data.DataLoader,
+    test_data_loader: torch.utils.data.DataLoader,
+    device: torch.device,
+    gradient_clipping_max_norm: Optional[float] = None
 ):
+    
+    mask = torch.vstack((torch.eye(3)*0, torch.eye(3)*1)).to(device)
+
+    # Training
     model.train()
     train_loss = 0
-    for train_batch in train_data_loader:
-        train_batch = train_batch.to(device)
+    for train_batch in train_data_loader:       
         optimizer.zero_grad()
-        output = model(train_batch)
-        loss = criterion(output.x, train_batch.y)
-
+        pred = model(train_batch)
+        loss = criterion(pred.x_new@mask, train_batch.x_new@mask)
         loss.backward()
 
-        # Print average and maximum gradient norm
         if gradient_clipping_max_norm is not None:
             torch.nn.utils.clip_grad_norm_(
                 model.parameters(), max_norm=gradient_clipping_max_norm
@@ -62,24 +94,21 @@ def epoch(
         train_loss += loss.item()
     train_loss /= len(train_data_loader)
 
+    # Validation
     model.eval()
+
     validation_loss = 0
     with torch.no_grad():
         for validation_batch in validation_data_loader:
-            validation_batch = validation_batch.to(device)
-            loss = criterion(model(validation_batch).x, validation_batch.y)
-            validation_loss += loss.item()
+            validation_loss += criterion(model(validation_batch).x_new@mask, validation_batch.x_new@mask).item()
         validation_loss /= len(validation_data_loader)
 
-    test_loss = 0
-    zoh_loss = 0
+    # Test
+    test_loss, zoh_loss = 0, 0
     with torch.no_grad():
         for test_batch in test_data_loader:
-            test_batch = test_batch.to(device)
-            loss = criterion(model(test_batch).x, test_batch.y)
-            test_loss += loss.item()
-            loss = criterion(test_batch.x[:, 3:5], test_batch.y)
-            zoh_loss += loss.item()
+            test_loss += criterion(model(test_batch).x_new@mask, test_batch.x_new@mask).item()
+            zoh_loss += criterion(test_batch.x@mask, test_batch.x_new@mask).item()
         test_loss /= len(test_data_loader)
         zoh_loss /= len(test_data_loader)
 
@@ -95,27 +124,3 @@ def epoch(
 
     scheduler.step(validation_loss)
 
-
-def save_model(model, data_set):
-    model_artifact = wandb.Artifact("ResidualGNN-0-debug", type="model")
-
-    torch.save(model, "model.pt")
-    model_artifact.add_file("model.pt")
-
-    torch.save(model.state_dict(), "model.pth")
-    model_artifact.add_file("model.pth")
-
-    model_data = {
-        "model_state_dict": model.state_dict(),
-        "node_channels": data_set.node_channels,
-        "edge_channels": data_set.edge_channels,
-        "normalization_metrics": data_set.metrics,
-    }
-
-    torch.save(model_data, "model_data.pth")
-
-    for file in os.listdir("src/algos"):
-        if ".py" in file:
-            model_artifact.add_file(f"src/algos/{file}")
-
-    model_artifact.save()

@@ -1,17 +1,17 @@
-method: grid  # grid, bayes, random
+method: random  # grid, bayes, random
 metric:
   name: test_loss
   goal: minimize
 parameters:
   learning_rate:
-    values: [0.001]
+    values: [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
   batch_size:
-    values: [100]
+    values: [200, 100, 50, 10]
   num_epochs:
-    values: [2000]
+    values: [100]
   weight_decay:
-    values: [1e-2,5e-1, 1e-1, 1, 10]
+    values: [0.0, 1e-3, 1e-2, 1e-1]
   gradient_clipping_max_norm:
-    values: [1e4]
+    values: [1e4, 1e9]
   scheduler_patience:
-    values: [2000]
+    values: [20, 50, 100]
