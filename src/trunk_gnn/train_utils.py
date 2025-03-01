@@ -4,6 +4,7 @@ import subprocess
 import os
 import numpy as np
 from typing import Optional
+import shutil
 
 
 def init_wandb(args):
@@ -36,7 +37,7 @@ def set_seed(seed=None):
 
 def save_model(model, dataset):
     if os.path.exists("artifacts"):
-        os.removedirs("artifacts")
+        shutil.rmtree("artifacts")
     os.makedirs("artifacts")
 
     model_artifact = wandb.Artifact("ResidualGNN-0-debug", type="model")
