@@ -1,6 +1,6 @@
 #!/bin/bash
 REPO_DIR="."
-TRAIN_SCRIPT="auto_train.py"
+TRAIN_SCRIPT="scripts/auto_train.py"
 LAST_COMMIT_FILE="/tmp/last_commit.txt"
 
 cd $REPO_DIR
@@ -20,7 +20,7 @@ if [ "$LATEST_COMMIT_HASH" != "$LAST_COMMIT_HASH" ]; then
     if [[ "$LATEST_COMMIT_MSG" == *"[TRAIN]"* ]]; then
         echo "New [TRAIN] commit found. Running training..."
         git pull origin main
-        nohup /home/pbenito/miniconda3/bin/python3 $TRAIN_SCRIPT > train.log 2>&1 &
+        nohup /usr/bin/python3 -m uv run $TRAIN_SCRIPT > train.log 2>&1 &
     fi
     # Update last processed commit
     echo $LATEST_COMMIT_HASH > $LAST_COMMIT_FILE
