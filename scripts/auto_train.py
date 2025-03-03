@@ -16,23 +16,21 @@ def train_sweep(config=None):
     with wandb.init(config=config):
         config = wandb.config
 
-        train.main(
-            #TODO load normal args and then override with config
-            Namespace(
-                data_set_folder="data/no_mass_100_train",
-                num_epochs=config.num_epochs,
-                batch_size=config.batch_size,
-                learning_rate=config.learning_rate,
-                weight_decay=config.weight_decay,
-                gradient_clipping_max_norm=config.gradient_clipping_max_norm,
-                normalization_strategy="none",
-                seed=0,
-                wandb=True,
-                notes="",
-                save_model=True,
-                scheduler_patience=config.scheduler_patience,
-            )
-        )
+        args = train.get_args()
+
+        args.num_epochs = config.num_epochs
+        args.batch_size = config.batch_size
+        args.learning_rate = config.learning_rate
+        args.weight_decay = config.weight_decay
+        args.gradient_clipping_max_norm = config.gradient_clipping_max_norm
+        args.scheduler_patience = config.scheduler_patience
+        args.save_model = True
+        args.wandb = True
+        args.seed = 0
+        args.notes = ""
+
+
+        train.main(args)
 
 
 def main():
