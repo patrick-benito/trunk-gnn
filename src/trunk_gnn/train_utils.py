@@ -3,6 +3,7 @@ import torch
 import subprocess
 import os
 import shutil
+from typing import Optional
 
 def init_wandb(args):
     if args.wandb:

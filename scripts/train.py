@@ -8,7 +8,8 @@ import argparse
 from trunk_gnn.data import TrunkGraphDataset
 from trunk_gnn.model import TrunkGNN
 
-from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model, dataset_split
+from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
+from trunk_gnn.dataset_utils import dataset_split
 from trunk_gnn.test_utils import open_loop_test
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
