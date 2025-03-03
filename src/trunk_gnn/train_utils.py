@@ -13,7 +13,6 @@ def init_wandb(args):
             project="trunk-gnn-0.1.0",
             config={
                 "learning_rate": args.learning_rate,
-                "data_set_folder": args.data_set_folder,
                 "num_epochs": args.num_epochs,
                 "batch_size": args.batch_size,
                 "args": args,

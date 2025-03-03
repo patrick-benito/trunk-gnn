@@ -6,10 +6,10 @@ import wandb
 import argparse
 
 from trunk_gnn.data import TrunkGraphDataset
-
 from trunk_gnn.model import TrunkGNN
 
-from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
+from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model, dataset_split
+from trunk_gnn.test_utils import open_loop_test
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,7 +31,7 @@ def train(
 
     model.to(device)
 
-    for _ in tqdm(range(args.num_epochs)):
+    for i in tqdm(range(args.num_epochs)):
         epoch(
             model,
             optimizer,
@@ -44,12 +44,14 @@ def train(
             gradient_clipping_max_norm=args.gradient_clipping_max_norm,
         )
 
+        if i % 100 == 0:
+            open_loop_test(model, DataLoader(TrunkGraphDataset(args.test_dataset_folder, device=device)))
 
 def main(args):
     init_wandb(args)
 
-    dataset = TrunkGraphDataset(args.data_set_folder, device=device)
-    train_data_set, validation_data_set, test_data_set = torch.utils.data.random_split(
+    dataset = TrunkGraphDataset(args.train_dataset_folder, device=device)
+    train_data_set, validation_data_set, test_data_set = dataset_split(
         dataset, [0.72, 0.14, 0.14]
     )
 
@@ -82,12 +84,17 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--data_set_folder",
+        "--train_dataset_folder",
         type=str,
         default="data/no_mass_100_train/",
-        help="Path of the dataset file.",
+        help="Path of the training dataset file.",
     )
-
+    parser.add_argument(
+        "--test_dataset_folder",
+        type=str,
+        default="data/no_mass_1_test/",
+        help="Path of the testing dataset file"
+    )
     parser.add_argument(
         "--num_epochs", type=int, default=2000, help="Number of training epochs."
     )
