@@ -2,10 +2,7 @@ import wandb
 import torch
 import subprocess
 import os
-import numpy as np
-from typing import Optional
 import shutil
-
 
 def init_wandb(args):
     if args.wandb:
