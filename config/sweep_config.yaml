@@ -10,7 +10,7 @@ parameters:
   num_epochs:
     values: [2000]
   weight_decay:
-    values: [0.0]
+    values: [0.0, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5]
   gradient_clipping_max_norm:
     values: [1e9]
   scheduler_patience:

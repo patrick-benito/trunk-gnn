@@ -89,6 +89,8 @@ class GNNBlock(MessagePassing):
         return x
 
 
+## GNN model ##
+
 class TrunkGNN(nn.Module):
     def __init__(self, num_links, num_blocks=1):
         super(TrunkGNN, self).__init__()
@@ -119,3 +121,26 @@ class TrunkGNN(nn.Module):
             x[:,:3] += x@velocity_mask * self.dt   # Update position
             
         return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=x)
+
+
+## MLP model as a baseline ##
+
+class TrunkMLP(nn.Module):
+    def __init__(self, num_links):
+        super(TrunkMLP, self).__init__()
+    
+        self.num_links = num_links
+        self.in_features = 6*num_links
+        self.out_features = 3*num_links
+        self.model = MLP(self.in_features, self.out_features, num_hidden_layers=4, hidden_features=150)
+
+    def forward(self, data: Data):
+        #TODO: Only handles unshuffled data
+        x = data.x
+        dv = self.model(x.reshape(-1, self.in_features))
+            
+        x[:,3:] += dv                          # Update velocity
+        x[:,:3] += x@velocity_mask * self.dt   # Update position
+
+        x = x.reshape(-1, self.num_links, 6)
+        return Data(x=x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=x)

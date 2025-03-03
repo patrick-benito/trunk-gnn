@@ -113,5 +113,3 @@ class TrunkGraphDataset(InMemoryDataset):
  
         self.save(data_list, self.processed_paths[0])
         torch.save(self.num_links, self.processed_paths[1])
-
-
