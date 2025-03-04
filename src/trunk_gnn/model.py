@@ -133,14 +133,19 @@ class TrunkMLP(nn.Module):
         self.in_features = 6*num_links
         self.out_features = 3*num_links
         self.model = MLP(self.in_features, self.out_features, num_hidden_layers=4, hidden_features=150)
+        self.dt = 0.01
 
-    def forward(self, data: Data):
+    def forward(self, _data: Data):
+        data = _data.clone()
         #TODO: Only handles unshuffled data
+        
         x = data.x
-        dv = self.model(x.reshape(-1, self.in_features))
-            
-        x[:,3:] += dv                          # Update velocity
-        x[:,:3] += x@velocity_mask * self.dt   # Update position
+        dv = self.model(x.view(-1, self.in_features))
+        dv = dv.view(-1, 3)
 
-        x = x.reshape(-1, self.num_links, 6)
-        return Data(x=x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=x)
+        v_new = x[:,3:] + dv
+        x_new = x[:,:3] + v_new * self.dt   # Update position
+
+        full_x_new = torch.cat([x_new, v_new], dim=1)
+
+        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new)

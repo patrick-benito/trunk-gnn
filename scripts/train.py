@@ -57,11 +57,15 @@ def main(args):
     )
     
     if args.model == "gnn":
+        print("Using GNN model")
         model = TrunkGNN(num_links=dataset.num_links)
-    else:
+    elif args.model == "mlp":
+        print("Using MLP model")
         model = TrunkMLP(num_links=dataset.num_links)
         args.shuffle = False # MLP does not support shuffling
-
+    else:
+        raise ValueError(f"Model {args.model} not supported.")
+    
     train(
         args,
         model,
@@ -88,7 +92,7 @@ def main(args):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="gnn", help="Model to train.")
+    parser.add_argument("--model", type=str, default="mlp", help="Model to train.")
     parser.add_argument(
         "--train_dataset_folder",
         type=str,
@@ -105,7 +109,7 @@ def get_args():
         "--num_epochs", type=int, default=2000, help="Number of training epochs."
     )
     parser.add_argument(
-        "--batch_size", type=int, default=100, help="Batch size for training."
+        "--batch_size", type=int, default=1, help="Batch size for training."
     )
     parser.add_argument(
         "--learning_rate",
