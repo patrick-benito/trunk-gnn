@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import math
+import wandb
 
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
@@ -54,15 +55,15 @@ class GNNBlock(MessagePassing):
         self.edge_mlp = MLP(
             edge_channels_in,
             edge_channels_out,
-            num_hidden_layers=4,
-            hidden_features=150,
+            num_hidden_layers=wandb.config.get("edge_num_hidden_layers", 4),
+            hidden_features=wandb.config.get("edge_hidden_features", 150),
         ) # e' <- f_e(e, x_i, x_j)
 
         self.node_mlp = MLP(
             node_channels_in + edge_channels_out,
             node_channels_out,
-            num_hidden_layers=1,
-            hidden_features=100,
+            num_hidden_layers=wandb.config.get("node_num_hidden_layers", 1),
+            hidden_features=wandb.config.get("node_hidden_features", 100),
         ) # x' <- f_v(x, e)
 
     def forward(self, x, edge_index, edge_attr=None):
@@ -107,7 +108,7 @@ class TrunkGNN(nn.Module):
                     node_channels_in=3,
                     node_channels_out=3,
                     edge_channels_in=6,
-                    edge_channels_out=50,
+                    edge_channels_out=wandb.config.get("edge_channels_out", 50),
                 )
             )
 
