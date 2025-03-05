@@ -86,7 +86,7 @@ class GNNBlock(MessagePassing):
 
     def update(self, aggr_out, x):
 
-        x = self.node_mlp(torch.cat([x@velocity_mask, aggr_out], dim=1))
+        x = self.node_mlp(torch.cat([x, aggr_out], dim=1))
         return x
 
 
@@ -105,7 +105,7 @@ class TrunkGNN(nn.Module):
         for _ in range(num_blocks):
             self.layers.append(
                 GNNBlock(
-                    node_channels_in=3,
+                    node_channels_in=6,
                     node_channels_out=3,
                     edge_channels_in=6,
                     edge_channels_out=wandb.config.get("edge_channels_out", 50),
