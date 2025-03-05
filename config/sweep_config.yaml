@@ -4,11 +4,11 @@ metric:
   goal: minimize
 parameters:
   learning_rate:
-    values: [1e-3, 1e-4]
+    values: [1e-3]
   batch_size:
     values: [200]
   num_epochs:
-    values: [500]
+    values: [2000]
   weight_decay:
     values: [1e-7]
   gradient_clipping_max_norm:
@@ -16,12 +16,12 @@ parameters:
   scheduler_patience:
     values: [100]
   edge_num_hidden_layers:
-    values: [1,2,3,4]
+    values: [1]
   edge_hidden_features:
-    values: [10, 75, 150]
+    values: [10]
   edge_channels_out:
-    values: [5, 10, 25, 50]
+    values: [5]
   node_num_hidden_layers:
     values: [1]
   node_hidden_features:
-    values: [10, 50,100]
+    values: [10]
