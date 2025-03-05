@@ -133,7 +133,7 @@ class TrunkMLP(nn.Module):
         super(TrunkMLP, self).__init__()
     
         self.num_links = num_links
-        self.in_features = 6*num_links
+        self.in_features = 3*num_links
         self.out_features = 3*num_links
         self.model = MLP(self.in_features, self.out_features, num_hidden_layers=4, hidden_features=150)
         self.dt = 0.01
@@ -143,7 +143,8 @@ class TrunkMLP(nn.Module):
         #TODO: Only handles unshuffled data
         
         x = data.x
-        dv = self.model(x.view(-1, self.in_features))
+        vel = x@velocity_mask
+        dv = self.model(vel.view(-1, self.in_features))
         dv = dv.view(-1, 3)
 
         v_new = x[:,3:] + dv

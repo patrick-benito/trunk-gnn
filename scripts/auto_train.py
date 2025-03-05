@@ -3,6 +3,7 @@ from datetime import datetime
 from argparse import Namespace
 import wandb
 import yaml
+import platform
 
 import train as train
 
@@ -30,13 +31,21 @@ def train_sweep(config=None):
         args.model = config.model
         args.notes = ""
 
-
         train.main(args)
 
 
 def main():
     sweep_config = load_sweep_config("config/sweep_config.yaml")
-    sweep_id = wandb.sweep(sweep_config, project=f"trunk-{sweep_config['parameters']['model']['values'][0]}-0.1.0-sweep")
+    is_iris = platform.node() == "iris"
+    local = "" if is_iris else "local-"
+    project_name = f"{local}trunk-{sweep_config['parameters']['model']['values'][0]}-0.1.0-sweep"
+    
+    if is_iris:
+        commit_message = os.popen('git log -1 --pretty=%B').read().strip()
+        sweep_config['name'] = commit_message.replace('[TRAIN]', '').strip()
+        print(f"Commit message: {sweep_config['name']}")
+
+    sweep_id = wandb.sweep(sweep_config, project=project_name)
     wandb.agent(sweep_id, function=train_sweep)
 
 
