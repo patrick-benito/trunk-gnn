@@ -92,7 +92,7 @@ def main(args):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="gnn", help="Model to train.")
+    parser.add_argument("--model", type=str, default="mlp", help="Model to train.")
     parser.add_argument(
         "--train_dataset_folder",
         type=str,
