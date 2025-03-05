@@ -3,6 +3,8 @@ metric:
   name: test_loss
   goal: minimize
 parameters:
+  model:
+    values: ['gnn']
   learning_rate:
     values: [1e-3]
   batch_size:

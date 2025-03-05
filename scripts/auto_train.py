@@ -27,6 +27,7 @@ def train_sweep(config=None):
         args.save_model = True
         args.wandb = True
         args.seed = 0
+        args.model = config.model
         args.notes = ""
 
 
@@ -35,7 +36,7 @@ def train_sweep(config=None):
 
 def main():
     sweep_config = load_sweep_config("config/sweep_config.yaml")
-    sweep_id = wandb.sweep(sweep_config, project="trunk-gnn-0.1.0-sweep")
+    sweep_id = wandb.sweep(sweep_config, project=f"test-trunk-{sweep_config['parameters']['model']['values'][0]}-0.1.0-sweep")
     wandb.agent(sweep_id, function=train_sweep)
 
 

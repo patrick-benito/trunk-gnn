@@ -101,6 +101,8 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     
     wandb.log({f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)})
 
+    plt.close(fig_positions)
+    plt.close(fig_velocities)
     return rmse
 
 def open_loop_test_all(model: torch.nn.Module, test_data_folder: str) -> torch.Tensor:
