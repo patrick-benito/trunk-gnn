@@ -18,10 +18,10 @@ parameters:
   edge_num_hidden_layers:
     values: [1]
   edge_hidden_features:
-    values: [10]
+    values: [50, 75, 150]
   edge_channels_out:
     values: [5]
   node_num_hidden_layers:
     values: [1]
   node_hidden_features:
-    values: [10]
+    values: [50]
