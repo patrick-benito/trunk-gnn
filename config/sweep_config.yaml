@@ -10,7 +10,7 @@ parameters:
   batch_size:
     values: [200]
   num_epochs:
-    values: [2000]
+    values: [500]
   weight_decay:
     values: [1e-7, 0]
   gradient_clipping_max_norm:

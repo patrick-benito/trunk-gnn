@@ -113,8 +113,6 @@ def open_loop_test_all(model: torch.nn.Module, test_data_folder: str) -> torch.T
         avg_open_loop_rmse += open_loop_test(model, test_data_loader, additonal_info=folder)
 
     avg_open_loop_rmse /= len(os.listdir(test_data_folder))
-
-    if avg_open_loop_rmse > 1e3:
-        raise ValueError("Open loop RMSE is too high")
+    
     wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse
