@@ -8,7 +8,7 @@ from typing import Optional
 def init_wandb(args):
     if args.wandb:
         wandb.init(
-            project="trunk-gnn-0.1.0",
+            project=f"trunk-{args.model}-0.1.0",
             config={
                 "learning_rate": args.learning_rate,
                 "num_epochs": args.num_epochs,

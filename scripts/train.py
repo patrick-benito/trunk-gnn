@@ -10,7 +10,7 @@ from trunk_gnn.model import TrunkGNN, TrunkMLP
 
 from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
 from trunk_gnn.dataset_utils import dataset_split
-from trunk_gnn.test_utils import open_loop_test
+from trunk_gnn.test_utils import open_loop_test_all
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -46,7 +46,7 @@ def train(
         )
 
         if i % 100 == 0:
-            open_loop_test(model, DataLoader(TrunkGraphDataset(args.test_dataset_folder, device=device)))
+            open_loop_test_all(model, args.test_dataset_folder)
 
 def main(args):
     init_wandb(args)
@@ -102,8 +102,8 @@ def get_args():
     parser.add_argument(
         "--test_dataset_folder",
         type=str,
-        default="data/no_mass_1_test/",
-        help="Path of the testing dataset file"
+        default="data/no_mass_test/",
+        help="Path of the testing dataset folders"
     )
     parser.add_argument(
         "--num_epochs", type=int, default=2000, help="Number of training epochs."
