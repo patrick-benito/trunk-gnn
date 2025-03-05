@@ -118,10 +118,12 @@ class TrunkGNN(nn.Module):
             x = data.x
             dv, _ = layer(x, data.edge_index, data.edge_attr)
             
-            x[:,3:] += dv                          # Update velocity
-            x[:,:3] += x@velocity_mask * self.dt   # Update position
+            v_new = x[:,3:] + dv                          # Update velocity
+            x_new = x[:,:3] + v_new * self.dt              # Update position
+
+            full_x_new = torch.cat([x_new, v_new], dim=1)
             
-        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=x)
+        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new)
 
 
 ## MLP model as a baseline ##

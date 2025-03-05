@@ -99,7 +99,7 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     fig_positions = plot_rollout(states, gt_states, links=[0, 10, 20, -1])
     fig_velocities = plot_velocities(states, gt_states, links=[0, 10, 20, -1])
     
-    wandb.log({f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)})
+    wandb.log({f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 
     plt.close(fig_positions)
     plt.close(fig_velocities)
@@ -114,5 +114,5 @@ def open_loop_test_all(model: torch.nn.Module, test_data_folder: str) -> torch.T
 
     avg_open_loop_rmse /= len(os.listdir(test_data_folder))
 
-    wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()})
+    wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse
