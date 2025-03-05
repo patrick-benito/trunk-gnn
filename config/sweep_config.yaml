@@ -4,7 +4,7 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: ['mlp']
+    values: ['gnn']
   learning_rate:
     values: [1e-3]
   batch_size:
