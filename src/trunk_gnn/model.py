@@ -35,7 +35,7 @@ class MLP(nn.Module):
 
         self.model = nn.Sequential(*layers)
 
-        self.reset_parameters()
+        #self.reset_parameters()
 
     def reset_parameters(self):
         for layer in self.model:
