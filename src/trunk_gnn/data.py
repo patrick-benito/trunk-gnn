@@ -6,6 +6,9 @@ from trunk_sim.data import get_column_names
 
 from torch_geometric.data import Data
 
+def add_noise(data, noise_std=0.1):
+    pass
+
 #TODO: evaluate whether standarization or normalization is better
 def normalize_data(data, metrics):
     for key, value in data.items():
@@ -26,7 +29,7 @@ def denormalize_data(data, metrics):
 
 
 class TrunkGraphDataset(InMemoryDataset):
-    def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', metrics = None, device = None):
+    def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', add_noise = False, metrics = None, device = None):
         super().__init__(root, transform=self.transform) # or use NormalizeFeatures
         self.load(self.processed_paths[0])
         self.num_links = torch.load(self.processed_paths[1])
@@ -35,7 +38,8 @@ class TrunkGraphDataset(InMemoryDataset):
             
         self.normalization_strategy = normalization_strategy
         self.metrics = metrics if metrics else self.compute_metrics()
-
+        self.add_noise = add_noise
+        
         print(f"Loaded {root} dataset containing {len(self)} samples.")
 
     @property
@@ -67,6 +71,8 @@ class TrunkGraphDataset(InMemoryDataset):
         return metrics
 
     def transform(self,data):
+        if self.add_noise:
+            data = self.add_noise(data)
         if self.normalization_strategy == "normalize":
             return normalize_data(data, self.metrics)
         elif self.normalization_strategy == "denormalize":

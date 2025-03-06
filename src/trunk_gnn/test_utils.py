@@ -7,11 +7,14 @@ from trunk_sim import visualization
 import os
 from torch_geometric.loader import DataLoader
 from trunk_gnn.data import TrunkGraphDataset
+import time
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torch.Tensor, torch.Tensor]:
+    start_time = time.time()
+    
     model.eval()
     state = ground_truth[0].clone()
     state.x_new = None # Not used in rollout
@@ -31,7 +34,9 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torc
     state_list = torch.stack(state_list)
     state_list_gt = torch.stack(state_list_gt)
 
-    return state_list, state_list_gt
+    delta_time = time.time() - start_time
+
+    return state_list, state_list_gt, delta_time
 
 def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links = None) -> torch.Tensor:
     if links is None:
@@ -94,12 +99,12 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links=None):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = ""):
-    states, gt_states = test_rollout(model, list(test_data_loader))
+    states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
     rmse = open_loop_link_rmse(states, gt_states)
     fig_positions = plot_rollout(states, gt_states, links=[0, 10, 20, -1])
     fig_velocities = plot_velocities(states, gt_states, links=[0, 10, 20, -1])
     
-    wandb.log({f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
+    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 
     plt.close(fig_positions)
     plt.close(fig_velocities)

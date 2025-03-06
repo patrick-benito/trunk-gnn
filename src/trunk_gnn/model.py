@@ -79,7 +79,7 @@ class GNNBlock(MessagePassing):
         sender, receiver = edge_index
         diff = x[receiver] - x[sender]
 
-        return self.edge_mlp(diff)
+        return self.edge_mlp(torch.cat([diff], dim=1))
 
     def message(self, marsh_edge_attr):
         return marsh_edge_attr

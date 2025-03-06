@@ -18,12 +18,12 @@ parameters:
   scheduler_patience:
     values: [100]
   edge_num_hidden_layers:
-    values: [4]
+    values: [1,2,3,4]
   edge_hidden_features:
-    values: [150]
+    values: [10,50,150]
   edge_channels_out:
-    values: [100]
+    values: [10,50,100]
   node_num_hidden_layers:
-    values: [4]
+    values: [1,2,3,4]
   node_hidden_features:
-    values: [150]
+    values: [10,50,150]
