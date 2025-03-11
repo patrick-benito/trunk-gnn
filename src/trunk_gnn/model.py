@@ -55,15 +55,15 @@ class GNNBlock(MessagePassing):
         self.edge_mlp = MLP(
             edge_channels_in,
             edge_channels_out,
-            num_hidden_layers=wandb.config.get("edge_num_hidden_layers", 4),
-            hidden_features=wandb.config.get("edge_hidden_features", 150),
+            num_hidden_layers=wandb.config["edge_num_hidden_layers"],
+            hidden_features=wandb.config["edge_hidden_features"],
         ) # e' <- f_e(e, x_i, x_j)
 
         self.node_mlp = MLP(
             node_channels_in + edge_channels_out,
             node_channels_out,
-            num_hidden_layers=wandb.config.get("node_num_hidden_layers", 1),
-            hidden_features=wandb.config.get("node_hidden_features", 100),
+            num_hidden_layers=wandb.config["node_num_hidden_layers"],
+            hidden_features=wandb.config["node_hidden_features"],
         ) # x' <- f_v(x, e)
 
     def forward(self, x, edge_index, edge_attr=None):
@@ -85,9 +85,14 @@ class GNNBlock(MessagePassing):
         return marsh_edge_attr
 
     def update(self, aggr_out, x):
+        if wandb.config["use_velocity_only"]:
+            x[:,:3] = 0
 
-        x = self.node_mlp(torch.cat([x, aggr_out], dim=1))
-        return x
+        if not wandb.config["use_edge_mlp"]:
+            aggr_out = torch.zeros_like(aggr_out)
+
+        x_large = torch.cat([x, aggr_out], dim=1)
+        return self.node_mlp(x_large)
 
 
 ## GNN model ##
@@ -104,13 +109,19 @@ class TrunkGNN(nn.Module):
         self.link_delta_z_pos = -0.0106666666666666 # * 29 links = -0.3093333333333334
         self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, num_links+1)).reshape(-1,1)).to(self.device)
 
+        node_channels_in = 6
+        if wandb.config["use_ids"]:
+            node_channels_in += 1
+
+        edge_channels_in = node_channels_in
+
         for _ in range(num_blocks):
             self.layers.append(
                 GNNBlock(
-                    node_channels_in=6,
+                    node_channels_in=node_channels_in,
                     node_channels_out=3,
-                    edge_channels_in=6,
-                    edge_channels_out=wandb.config.get("edge_channels_out", 50),
+                    edge_channels_in=edge_channels_in,
+                    edge_channels_out=wandb.config["edge_channels_out"],
                 )
             )
 
@@ -119,7 +130,14 @@ class TrunkGNN(nn.Module):
         for layer in self.layers:
             x = data.x
             ids = data.ids
-            x_bar = x - self.x_rest[ids,:] # x_bar = x - x_rest
+            x_bar = x
+
+            if wandb.config["use_resting_state"]:
+                x_bar = x - self.x_rest[ids,:]
+                
+            if wandb.config["use_ids"]:
+                x_bar = torch.hstack([x_bar, ids.reshape(-1,1)])
+
             dv, _ = layer(x_bar, data.edge_index, data.edge_attr)
             
             v_new = x[:,3:] + dv                          # Update velocity
@@ -131,7 +149,6 @@ class TrunkGNN(nn.Module):
 
 
 ## MLP model as a baseline ##
-
 class TrunkMLP(nn.Module):
     def __init__(self, num_links):
         super(TrunkMLP, self).__init__()
@@ -150,7 +167,7 @@ class TrunkMLP(nn.Module):
         vel = x@velocity_mask
         dv = self.model(vel.view(-1, self.in_features))
         dv = dv.view(-1, 3)
-
+        
         v_new = x[:,3:] + dv
         x_new = x[:,:3] + v_new * self.dt   # Update position
 

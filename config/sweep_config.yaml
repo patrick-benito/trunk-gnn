@@ -3,27 +3,5 @@ metric:
   name: test_loss
   goal: minimize
 parameters:
-  model:
-    values: ['gnn']
-  learning_rate:
-    values: [1e-3]
-  batch_size:
-    values: [200]
   num_epochs:
-    values: [2000]
-  weight_decay:
-    values: [1e-7, 0]
-  gradient_clipping_max_norm:
-    values: [1e9]
-  scheduler_patience:
-    values: [100]
-  edge_num_hidden_layers:
-    values: [1,2,3,4]
-  edge_hidden_features:
-    values: [10,50,150]
-  edge_channels_out:
-    values: [10,50,100]
-  node_num_hidden_layers:
-    values: [1,2,3,4]
-  node_hidden_features:
-    values: [10,50,150]
+    values: [2100]

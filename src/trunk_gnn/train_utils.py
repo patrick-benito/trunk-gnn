@@ -4,24 +4,31 @@ import subprocess
 import os
 import shutil
 from typing import Optional
+import yaml
 
-def init_wandb(args):
-    if args.wandb:
+def load_config(file_path):
+    with open(file_path, "r") as file:
+        return yaml.safe_load(file)
+    
+
+def setup_config(args):
+    config = load_config(os.path.join("config","default_config.yaml"))
+    for key, value in vars(args).items():
+        if value is not None:
+            config[key] = value
+    config['commit'] = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+    
+    return config
+
+
+def init_wandb(config):
+    if config["wandb"]:
         wandb.init(
-            project=f"trunk-{args.model}-0.1.0",
-            config={
-                "learning_rate": args.learning_rate,
-                "num_epochs": args.num_epochs,
-                "batch_size": args.batch_size,
-                "args": args,
-                "notes": args.notes,
-                "commit": subprocess.check_output(["git", "rev-parse", "HEAD"])
-                .strip()
-                .decode("utf-8"),
-            },
+            project=f"trunk-{config['model']}-0.1.0",
+            config=config
         )
     else:
-        wandb.init(mode="disabled")
+        wandb.init(mode="disabled", config=config)
 
 
 def set_seed(seed=None):
@@ -48,6 +55,7 @@ def save_model(model, dataset):
     model_data = {
         "model_state_dict": model.state_dict(),
         "normalization_metrics": dataset.metrics,
+        "config": dict(wandb.config),
     }
 
     torch.save(model_data, os.path.join("artifacts", "model_data.pth"))

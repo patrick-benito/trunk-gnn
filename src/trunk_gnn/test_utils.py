@@ -110,6 +110,7 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     plt.close(fig_velocities)
     return rmse
 
+
 def open_loop_test_all(model: torch.nn.Module, test_data_folder: str) -> torch.Tensor:
     avg_open_loop_rmse = 0
 

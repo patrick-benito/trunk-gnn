@@ -4,19 +4,20 @@ from torch_geometric.loader import DataLoader
 from tqdm import tqdm
 import wandb
 import argparse
+import os
 
 from trunk_gnn.data import TrunkGraphDataset
 from trunk_gnn.model import TrunkGNN, TrunkMLP
 
-from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
+from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model, setup_config
 from trunk_gnn.dataset_utils import dataset_split
 from trunk_gnn.test_utils import open_loop_test_all
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print(f"Using device: {device}")
+
 def train(
-    args,
     model,
     criterion,
     optimizer,
@@ -24,15 +25,15 @@ def train(
     validation_data_loader,
     test_data_loader,
 ):
-    set_seed(args.seed)
+    set_seed(wandb.config["seed"])
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.8, patience=args.scheduler_patience
+        optimizer, mode="min", factor=0.8, patience=wandb.config["scheduler_patience"]
     )
 
     model.to(device)
 
-    for i in tqdm(range(args.num_epochs)):
+    for i in tqdm(range(wandb.config["num_epochs"])):
         epoch(
             model,
             optimizer,
@@ -42,49 +43,48 @@ def train(
             validation_data_loader,
             test_data_loader,
             device,
-            gradient_clipping_max_norm=args.gradient_clipping_max_norm,
+            gradient_clipping_max_norm=wandb.config["gradient_clipping_max_norm"],
         )
 
         if i % 100 == 0:
-            open_loop_test_all(model, args.test_dataset_folder)
+            open_loop_test_all(model, os.path.join(wandb.config["dataset_folder"], "test"))
 
-def main(args):
-    init_wandb(args)
+def main():
+    print(f"Initialized wandb with config: {wandb.config}")
 
-    dataset = TrunkGraphDataset(args.train_dataset_folder, device=device)
+    dataset = TrunkGraphDataset(os.path.join(wandb.config["dataset_folder"],"train"), device=device)
     train_data_set, validation_data_set, test_data_set = dataset_split(
         dataset, [0.72, 0.14, 0.14]
     )
     
-    if args.model == "gnn":
+    if wandb.config["model"] == "gnn":
         print("Using GNN model")
         model = TrunkGNN(num_links=dataset.num_links)
-    elif args.model == "mlp":
+    elif wandb.config["model"] == "mlp":
         print("Using MLP model")
         model = TrunkMLP(num_links=dataset.num_links)
-        args.shuffle = False # MLP does not support shuffling
+        wandb.config["shuffle"] = False # MLP does not support shuffling
     else:
-        raise ValueError(f"Model {args.model} not supported.")
+        raise ValueError(f"Model {wandb.config['model']} not supported.")
     
     train(
-        args,
         model,
         criterion=torch.nn.MSELoss(),
         optimizer=torch.optim.Adam(
-            model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
+            model.parameters(), lr=wandb.config["learning_rate"], weight_decay=wandb.config["weight_decay"]
         ),
         train_data_loader=DataLoader(
-            train_data_set, batch_size=args.batch_size, shuffle=args.shuffle
+            train_data_set, batch_size=wandb.config["batch_size"], shuffle=wandb.config["shuffle"]
         ),
         validation_data_loader=DataLoader(
-            validation_data_set, batch_size=args.batch_size, shuffle=args.shuffle
+            validation_data_set, batch_size=wandb.config["batch_size"], shuffle=wandb.config["shuffle"]
         ),
         test_data_loader=DataLoader(
-            test_data_set, batch_size=len(test_data_set), shuffle=args.shuffle
+            test_data_set, batch_size=len(test_data_set), shuffle=wandb.config["shuffle"]
         ),
     )
 
-    if args.save_model:
+    if wandb.config["save_model"]:
         save_model(model, dataset)
 
     wandb.finish()
@@ -92,37 +92,25 @@ def main(args):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="gnn", help="Model to train.")
+    parser.add_argument("--model", type=str, default=None, help="Model to train.")
     parser.add_argument(
-        "--train_dataset_folder",
+        "--dataset_folder",
         type=str,
-        default="data/no_mass_100_train_2/",
+        default="data/no_mass_100/",
         help="Path of the training dataset file.",
     )
     parser.add_argument(
-        "--test_dataset_folder",
-        type=str,
-        default="data/no_mass_test/",
-        help="Path of the testing dataset folders"
+        "--num_epochs", type=int, default=None, help="Number of training epochs."
     )
     parser.add_argument(
-        "--num_epochs", type=int, default=2000, help="Number of training epochs."
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=1, help="Batch size for training."
+        "--batch_size", type=int, default=None, help="Batch size for training."
     )
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=0.001,
+        default=None,
         help="Learning rate for optimization.",
     )
-    parser.add_argument("--weight_decay", type=float, default=1e-2)
-    parser.add_argument("--gradient_clipping_max_norm", type=float, default=1e6)
-    parser.add_argument("--normalization_strategy", type=str, default="none")
-    parser.add_argument("--scheduler_patience", type=str, default=40)
-
-    parser.add_argument("--shuffle", action="store_true", default=True)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--wandb", action="store_true", default=False)
     parser.add_argument("--notes", type=str, default="", help="Save notes")
@@ -132,4 +120,5 @@ def get_args():
 
 
 if __name__ == "__main__":
-    main(get_args())
+    init_wandb(setup_config(get_args()))
+    main()

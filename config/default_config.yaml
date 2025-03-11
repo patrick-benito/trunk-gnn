@@ -1,0 +1,21 @@
+# Model configuration
+model: 'gnn'  # Model type to use ('gnn' or 'mlp')
+edge_num_hidden_layers: 4  # Number of hidden layers in the edge MLP
+edge_hidden_features: 150  # Number of hidden features in the edge MLP
+edge_channels_out: 10  # Number of output channels in the edge MLP
+node_num_hidden_layers: 4  # Number of hidden layers in the node MLP
+node_hidden_features: 150  # Number of hidden features in the node MLP
+use_ids: False  # Whether to use node IDs as input features
+use_velocity_only: False  # Whether to use only velocities as input features
+use_resting_state: False  # Whether to use resting state as input features
+use_edge_mlp: False  # Whether to use an edge MLP
+
+# Training configuration
+learning_rate: 1.0e-3  # Learning rate for optimization
+batch_size: 200  # Size of each mini-batch
+num_epochs: 2000  # Number of training epochs
+weight_decay: 1.0e-7  # Weight decay for optimization
+gradient_clipping_max_norm: 1.0e09  # Maximum norm for gradient clipping
+scheduler_patience: 100  # Patience for learning rate scheduler
+shuffle: True  # Whether to shuffle the training data
+seed: 0  # Random seed for reproducibility
