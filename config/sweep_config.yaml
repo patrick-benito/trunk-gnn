@@ -14,4 +14,4 @@ parameters:
   num_epochs:
     values: [2000]
   dataset_folder:
-    values: ['data/mass_100g_no_kick', 'data/no_mass_no_kick','no_mass_with_kick_old']
+    values: ['data/mass_100g_no_kick', 'data/no_mass_no_kick','data/no_mass_with_kick_old']
