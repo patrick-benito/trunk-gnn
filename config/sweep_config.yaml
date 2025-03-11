@@ -3,5 +3,13 @@ metric:
   name: test_loss
   goal: minimize
 parameters:
+  model:
+    values: ['gnn']
+  use_edge_mlp:
+    values: [True, False]
+  use_ids:
+    values: [True, False]
+  use_resting_state:
+    values: [True, False]
   num_epochs:
-    values: [2100]
+    values: [2000]

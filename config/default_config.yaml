@@ -8,7 +8,7 @@ node_hidden_features: 150  # Number of hidden features in the node MLP
 use_ids: False  # Whether to use node IDs as input features
 use_velocity_only: False  # Whether to use only velocities as input features
 use_resting_state: False  # Whether to use resting state as input features
-use_edge_mlp: False  # Whether to use an edge MLP
+use_edge_mlp: True  # Whether to use an edge MLP
 
 # Training configuration
 learning_rate: 1.0e-3  # Learning rate for optimization
