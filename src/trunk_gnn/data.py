@@ -1,6 +1,6 @@
 import torch
 from typing import Literal
-from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.data import Data, InMemoryDataset, Dataset
 import pandas as pd
 from trunk_sim.data import get_column_names
 
@@ -104,6 +104,7 @@ class TrunkGraphDataset(InMemoryDataset):
             edge_index = torch.tensor([[i, j] for i in range(self.num_links) for j in range(self.num_links) if 0 < abs(i-j) < d+1]).T
 
             for idx in range(len(self.dataframe)):
+                ids = torch.tensor(range(1, self.num_links + 1))
                 t = self.dataframe.iloc[idx][self.time_col]
                 states = self.dataframe.iloc[idx][self.state_cols].values
                 controls = self.dataframe.iloc[idx][self.control_cols].values
@@ -115,7 +116,7 @@ class TrunkGraphDataset(InMemoryDataset):
                 u = torch.tensor(controls, dtype=torch.float32)
                 x_new = torch.tensor(next_states, dtype=torch.float32).reshape(self.num_links, -1)
 
-                data_list.append(Data(t=t, x=x, u=u, x_new=x_new, edge_index=edge_index))
+                data_list.append(Data(t=t, x=x, u=u, x_new=x_new, edge_index=edge_index, ids=ids))
  
         self.save(data_list, self.processed_paths[0])
         torch.save(self.num_links, self.processed_paths[1])

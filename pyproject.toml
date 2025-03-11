@@ -5,6 +5,7 @@ description = "ASL Trunk GNN Model"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "jax[cuda12]>=0.5.2",
     "torch>=2.6.0",
     "torch-geometric>=2.6.1",
     "tqdm>=4.67.1",

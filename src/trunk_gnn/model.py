@@ -101,6 +101,8 @@ class TrunkGNN(nn.Module):
         self.num_links = num_links
         self.num_blocks = 1
         self.dt = 0.01
+        self.link_delta_z_pos = -0.0106666666666666 # * 29 links = -0.3093333333333334
+        self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, num_links+1)).reshape(-1,1)).to(self.device)
 
         for _ in range(num_blocks):
             self.layers.append(
@@ -116,10 +118,12 @@ class TrunkGNN(nn.Module):
         data = _data.clone()
         for layer in self.layers:
             x = data.x
-            dv, _ = layer(x, data.edge_index, data.edge_attr)
+            ids = data.ids
+            x_bar = x - self.x_rest[ids,:] # x_bar = x - x_rest
+            dv, _ = layer(x_bar, data.edge_index, data.edge_attr)
             
             v_new = x[:,3:] + dv                          # Update velocity
-            x_new = x[:,:3] + v_new * self.dt              # Update position
+            x_new = x[:,:3] + v_new * self.dt             # Update position
 
             full_x_new = torch.cat([x_new, v_new], dim=1)
             
