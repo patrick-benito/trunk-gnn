@@ -15,7 +15,7 @@ learning_rate: 1.0e-3  # Learning rate for optimization
 batch_size: 200  # Size of each mini-batch
 num_epochs: 2000  # Number of training epochs
 weight_decay: 1.0e-7  # Weight decay for optimization
-gradient_clipping_max_norm: 1.0e09  # Maximum norm for gradient clipping
+gradient_clipping_max_norm: Null  # Maximum norm for gradient clipping
 scheduler_patience: 100  # Patience for learning rate scheduler
 shuffle: True  # Whether to shuffle the training data
 seed: 0  # Random seed for reproducibility
