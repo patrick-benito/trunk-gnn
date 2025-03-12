@@ -5,13 +5,9 @@ metric:
 parameters:
   model:
     values: ['gnn']
-  use_edge_mlp:
-    values: [True, False]
   use_ids:
     values: [True, False]
-  use_resting_state:
+  use_alpha:
     values: [True, False]
-  num_epochs:
-    values: [2000]
   dataset_folder:
-    values: ['data/mass_100g_no_kick', 'data/no_mass_no_kick','data/no_mass_with_kick_old']
+    values: ['data/mass_100g_no_kick']
