@@ -134,10 +134,11 @@ class TrunkGNN(nn.Module):
 
         x = data.x
         ids = data.ids
+        ids_int = ids.flatten().int()
         x_bar = x
 
         if wandb.config["use_resting_state"]:
-            x_bar = x - self.x_rest[ids,:]
+            x_bar = x - self.x_rest[ids_int]
         
         if wandb.config["use_alpha"]:
             x_bar = x_bar / self.alpha_mlp(ids)
