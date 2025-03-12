@@ -184,6 +184,8 @@ MUJOCO_LOG.TXT
 
 # Videos
 *.mp4
+# Figures
+figures/
 
 # Data
 *.csv

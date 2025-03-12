@@ -104,7 +104,7 @@ class TrunkGraphDataset(InMemoryDataset):
             edge_index = torch.tensor([[i, j] for i in range(self.num_links) for j in range(self.num_links) if 0 < abs(i-j) < d+1]).T
 
             for idx in range(len(self.dataframe)):
-                ids = torch.tensor(range(1, self.num_links + 1))
+                ids = range(1, self.num_links + 1)
                 t = self.dataframe.iloc[idx][self.time_col]
                 states = self.dataframe.iloc[idx][self.state_cols].values
                 controls = self.dataframe.iloc[idx][self.control_cols].values
@@ -115,6 +115,7 @@ class TrunkGraphDataset(InMemoryDataset):
                 x = torch.tensor(states, dtype=torch.float32).reshape(self.num_links, -1)
                 u = torch.tensor(controls, dtype=torch.float32)
                 x_new = torch.tensor(next_states, dtype=torch.float32).reshape(self.num_links, -1)
+                ids = torch.tensor(ids, dtype=torch.float32).reshape(self.num_links, -1)
 
                 data_list.append(Data(t=t, x=x, u=u, x_new=x_new, edge_index=edge_index, ids=ids))
  

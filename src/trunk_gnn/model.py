@@ -109,6 +109,8 @@ class TrunkGNN(nn.Module):
         self.link_delta_z_pos = -0.0106666666666666 # * 29 links = -0.3093333333333334
         self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, num_links+1)).reshape(-1,1)).to(self.device)
 
+        self.alpha_mlp = MLP(1, 1, num_hidden_layers=1, hidden_features=5)
+
         node_channels_in = 6
         if wandb.config["use_ids"]:
             node_channels_in += 1
@@ -127,24 +129,32 @@ class TrunkGNN(nn.Module):
 
     def forward(self, _data: Data):
         data = _data.clone()
-        for layer in self.layers:
-            x = data.x
-            ids = data.ids
-            x_bar = x
+        
+        layer = self.layers[0]
 
-            if wandb.config["use_resting_state"]:
-                x_bar = x - self.x_rest[ids,:]
-                
-            if wandb.config["use_ids"]:
-                x_bar = torch.hstack([x_bar, ids.reshape(-1,1)])
+        x = data.x
+        ids = data.ids
+        x_bar = x
 
-            dv, _ = layer(x_bar, data.edge_index, data.edge_attr)
+        if wandb.config["use_resting_state"]:
+            x_bar = x - self.x_rest[ids,:]
+        
+        if wandb.config["use_alpha"]:
+            x_bar = x_bar / self.alpha_mlp(ids)
             
-            v_new = x[:,3:] + dv                          # Update velocity
-            x_new = x[:,:3] + v_new * self.dt             # Update position
+        if wandb.config["use_ids"]:
+            x_bar = torch.hstack([x_bar, ids])
 
-            full_x_new = torch.cat([x_new, v_new], dim=1)
-            
+        dv, _ = layer(x_bar, data.edge_index, data.edge_attr)
+        
+        if wandb.config["use_alpha"]:
+            dv = dv * self.alpha_mlp(ids)
+  
+        v_new = x[:,3:] + dv                          # Update velocity
+        x_new = x[:,:3] + v_new * self.dt             # Update position
+
+        full_x_new = torch.cat([x_new, v_new], dim=1)
+        
         return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new)
 
 
