@@ -14,15 +14,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torch.Tensor, torch.Tensor]:
     start_time = time.time()
-    
+    start_index = 0
+
     model.eval()
-    state = ground_truth[0].clone()
+    state = ground_truth[start_index].clone()
     state.x_new = None # Not used in rollout
 
     state_list = []
     state_list_gt = []
 
-    for i in range(len(ground_truth)):
+    for i in range(start_index,len(ground_truth)):
         gt = ground_truth[i]
         state_list.append(state.x)
         state_list_gt.append(gt.x)
@@ -98,12 +99,16 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links=None):
     return fig
 
 
-def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = ""):
+def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
     states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
     rmse = open_loop_link_rmse(states, gt_states)
     fig_positions = plot_rollout(states, gt_states, links=[0, 10, 20, -1])
     fig_velocities = plot_velocities(states, gt_states, links=[0, 10, 20, -1])
     
+    if save_figures:
+        fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.png")
+        fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.png")
+
     wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 
     plt.close(fig_positions)
@@ -111,12 +116,18 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     return rmse
 
 
-def open_loop_test_all(model: torch.nn.Module, test_data_folder: str) -> torch.Tensor:
+def open_loop_test_all(model: torch.nn.Module, test_data_folder: str, save_figures = False) -> torch.Tensor:
     avg_open_loop_rmse = 0
+    if save_figures:
+        os.makedirs("figures", exist_ok=True)
 
-    for folder in os.listdir(test_data_folder):
+    folders = os.listdir(test_data_folder)
+    if "processed" in folders:
+        folders = ["."]
+
+    for folder in folders:
         test_data_loader = DataLoader(TrunkGraphDataset(os.path.join(test_data_folder, folder), device=device))
-        avg_open_loop_rmse += open_loop_test(model, test_data_loader, additonal_info=folder)
+        avg_open_loop_rmse += open_loop_test(model, test_data_loader, additonal_info=folder, save_figures=save_figures)
 
     avg_open_loop_rmse /= len(os.listdir(test_data_folder))
     
