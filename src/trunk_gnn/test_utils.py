@@ -64,7 +64,7 @@ def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) ->
     target_states = states[:, mapped, :]
     target_states_gt = states_gt[:, mapped, :]
 
-    return torch.sqrt(torch.mean((target_states - tip_states_gt) ** 2))
+    return torch.sqrt(torch.mean((target_states - target_states_gt) ** 2))
 
 def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
     fig = plt.figure()

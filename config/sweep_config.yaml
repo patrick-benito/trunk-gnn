@@ -5,9 +5,7 @@ metric:
 parameters:
   model:
     values: ['gnn']
-  use_ids:
-    values: [True, False]
-  use_alpha:
-    values: [True, False]
   dataset_folder:
     values: ['data/mass_100g_no_kick']
+  link_step:
+    values: [1, 2, 3, 10]

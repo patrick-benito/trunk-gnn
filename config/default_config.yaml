@@ -5,11 +5,11 @@ edge_hidden_features: 150  # Number of hidden features in the edge MLP
 edge_channels_out: 10  # Number of output channels in the edge MLP
 node_num_hidden_layers: 4  # Number of hidden layers in the node MLP
 node_hidden_features: 150  # Number of hidden features in the node MLP
-use_ids: True  # Whether to use node IDs as input features
+use_ids: False  # Whether to use node IDs as input features
 use_velocity_only: False  # Whether to use only velocities as input features
 use_resting_state: True  # Whether to use resting state as input features
 use_edge_mlp: True  # Whether to use an edge MLP
-use_alpha: True  # Whether to normalize the state vector by a MLP
+use_alpha: False  # Whether to normalize the state vector by a MLP
 link_step: 1 # Number of steps in links to be modeled in the GNN, 1 => 30 links, 2 => 15 links, 3 => 10 links, 10 => 3 links
 
 # Training configuration
