@@ -7,5 +7,5 @@ parameters:
     values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_no_kick']
-  link_step:
-    values: [1, 2, 3, 10]
+  use_alpha:
+    values: [False, True]
