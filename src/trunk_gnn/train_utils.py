@@ -98,6 +98,7 @@ def epoch(
 
         optimizer.step()
         train_loss += loss.item()
+        #wandb.log({"train_batch_loss": loss.item(), "gradien_norm": torch.nn.utils.n})
     train_loss /= len(train_data_loader)
 
     # Validation

@@ -98,16 +98,16 @@ class GNNBlock(MessagePassing):
 ## GNN model ##
 
 class TrunkGNN(nn.Module):
-    def __init__(self, num_links, num_blocks=1):
+    def __init__(self, num_blocks=1):
         super(TrunkGNN, self).__init__()
-
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.layers = nn.ModuleList()
-        self.num_links = num_links
+        self.num_links = 30
         self.num_blocks = 1
         self.dt = 0.01
-        self.link_delta_z_pos = -0.0106666666666666 # * 29 links = -0.3093333333333334
-        self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, num_links+1)).reshape(-1,1)).to(self.device)
+        self.link_delta_z_pos = -0.0106666666666666
+        # compute the resting state of the links as [0,0,link_delta_z_pos * i,0,0,0] for i in (1,2,3,...,30). We incude 0 so that index matches the link number
+        self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, self.num_links+1)).reshape(-1,1)).to(self.device)
 
         self.alpha_mlp = MLP(1, 1, num_hidden_layers=1, hidden_features=5)
 

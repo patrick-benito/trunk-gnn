@@ -11,7 +11,7 @@ from trunk_gnn.model import TrunkGNN, TrunkMLP
 
 from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
 from trunk_gnn.dataset_utils import dataset_split
-from trunk_gnn.test_utils import open_loop_test_all
+from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -28,12 +28,12 @@ def main(args):
     wandb.init(mode="disabled", config=model_data['config'])
     print(f"Initialized wandb with config: {wandb.config}")
 
-    model = TrunkGNN(num_links=30)
+    model = TrunkGNN()
     model.load_state_dict(torch.load(os.path.join(args.artifacts_folder, "model_state_dict.pth")))
     model.to(device)
     
     with torch.no_grad():
-        open_loop_test_all(model, args.test_dataset_folder, save_figures=True)
+        open_loop_test_all(model, load_data_sets_from_folder(args.test_dataset_folder), save_figures=True)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -41,7 +41,7 @@ def get_args():
     parser.add_argument(
         "--test_dataset_folder",
         type=str,
-        default="./data/mass_100g_no_kick/test",
+        default="./data/mass_100g_no_kick/test/",
         help="Path of the testing dataset folders"
     )
     parser.add_argument("--artifact_name", type=str, default=None, help="Artifact name to download from wandb.")

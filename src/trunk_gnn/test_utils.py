@@ -8,9 +8,28 @@ import os
 from torch_geometric.loader import DataLoader
 from trunk_gnn.data import TrunkGraphDataset
 import time
+from typing import List
 
+map_link = lambda link, n_links: min(max(round(link/30*n_links) - 1, 0), n_links-1)
+map_link_mujoco = lambda link, n_links: round((map_link(link,n_links)+1) / n_links * 30)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[TrunkGraphDataset]:
+    datasets = []
+
+    folders = os.listdir(test_data_folder)
+
+    if "raw" in folders:
+        folders = ["."]
+
+    folders = sorted(folders, key=lambda x: int(x.split("/")[-1]))
+
+    for folder in folders:
+        if "raw" in os.listdir(os.path.join(test_data_folder, folder)):
+            datasets.append(DataLoader(TrunkGraphDataset(os.path.join(test_data_folder, folder), device=device, link_step=link_step)))
+
+    return datasets
 
 def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torch.Tensor, torch.Tensor]:
     start_time = time.time()
@@ -39,28 +58,25 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torc
 
     return state_list, state_list_gt, delta_time
 
-def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links = None) -> torch.Tensor:
-    if links is None:
-        links = [-1]
+def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) -> torch.Tensor:
+    N = states.shape[1]
+    mapped = [map_link(link, N) for link in links]
+    target_states = states[:, mapped, :]
+    target_states_gt = states_gt[:, mapped, :]
 
-    tip_states = states[:, links, :]
-    tip_states_gt = states_gt[:, links, :]
+    return torch.sqrt(torch.mean((target_states - tip_states_gt) ** 2))
 
-    return torch.sqrt(torch.mean((tip_states - tip_states_gt) ** 2))
-
-def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links = None):
-    if links is None:
-        links = [-1]
-
+def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     states = states.detach().cpu().numpy()
     states_gt = states_gt.detach().cpu().numpy()
+    N = states.shape[1]
 
     for i in links:
-        ax.plot(states[:, i, 0], states[:, i, 1], states[:, i, 2], label=f'Prediction {i}')
-        ax.plot(states_gt[:, i, 0], states_gt[:, i, 1], states_gt[:, i, 2], label=f'Ground Truth {i}')
+        ax.plot(states[:, map_link(i,N), 0], states[:, map_link(i,N), 1], states[:, map_link(i,N), 2], label=f'Prediction {map_link_mujoco(i,N)}')
+        ax.plot(states_gt[:, map_link(i,N), 0], states_gt[:, map_link(i,N), 1], states_gt[:, map_link(i,N), 2], label=f'Ground Truth {map_link_mujoco(i,N)}')
 
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
@@ -69,22 +85,20 @@ def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links = None):
 
     return fig
 
-def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links=None):
-    if links is None:
-        links = [-1]
-
+def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
 
     states = states.detach().cpu().numpy()
     states_gt = states_gt.detach().cpu().numpy()
+    N = states.shape[1]
 
     for i in links:
-        ax[0].plot(states[:, i, 3], label=f'Prediction $v_x{i}$')
-        ax[0].plot(states_gt[:, i, 3], label=f'Ground Truth $v_x{i}$')
-        ax[1].plot(states[:, i, 4], label=f'Prediction $v_y{i}$')
-        ax[1].plot(states_gt[:, i, 4], label=f'Ground Truth $v_y{i}$')
-        ax[2].plot(states[:, i, 5], label=f'Prediction $v_z{i}$')
-        ax[2].plot(states_gt[:, i, 5], label=f'Ground Truth $v_z{i}$')
+        ax[0].plot(states[:, map_link(i,N), 3], label=f'Prediction $v_x{map_link_mujoco(i,N)}$')
+        ax[0].plot(states_gt[:, map_link(i,N), 3], label=f'Ground Truth $v_x{map_link_mujoco(i,N)}$')
+        ax[1].plot(states[:, map_link(i,N), 4], label=f'Prediction $v_y{map_link_mujoco(i,N)}$')
+        ax[1].plot(states_gt[:, map_link(i,N), 4], label=f'Ground Truth $v_y{map_link_mujoco(i,N)}$')
+        ax[2].plot(states[:, map_link(i,N), 5], label=f'Prediction $v_z{map_link_mujoco(i,N)}$')
+        ax[2].plot(states_gt[:, map_link(i,N), 5], label=f'Ground Truth $v_z{map_link_mujoco(i,N)}$')
 
     ax[0].set_xlabel('Time')
     ax[0].set_ylabel('Velocity $x$')
@@ -101,9 +115,9 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links=None):
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
     states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
-    rmse = open_loop_link_rmse(states, gt_states)
-    fig_positions = plot_rollout(states, gt_states, links=[0, 10, 20, -1])
-    fig_velocities = plot_velocities(states, gt_states, links=[0, 10, 20, -1])
+    rmse = open_loop_link_rmse(states, gt_states, links = [30])
+    fig_positions = plot_rollout(states, gt_states, links=[1, 10, 20, 30])
+    fig_velocities = plot_velocities(states, gt_states, links=[1, 10, 20, 30])
     
     if save_figures:
         fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.png")
@@ -116,20 +130,17 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     return rmse
 
 
-def open_loop_test_all(model: torch.nn.Module, test_data_folder: str, save_figures = False) -> torch.Tensor:
+def open_loop_test_all(model: torch.nn.Module, test_datasets: List[TrunkGraphDataset], save_figures = False) -> torch.Tensor:
+    assert len(test_datasets) > 0, "No test datasets provided"
+
     avg_open_loop_rmse = 0
     if save_figures:
         os.makedirs("figures", exist_ok=True)
 
-    folders = os.listdir(test_data_folder)
-    if "processed" in folders:
-        folders = ["."]
+    for index, test_data_loader in enumerate(test_datasets):
+        avg_open_loop_rmse += open_loop_test(model, test_data_loader, additonal_info=index, save_figures=save_figures)
 
-    for folder in folders:
-        test_data_loader = DataLoader(TrunkGraphDataset(os.path.join(test_data_folder, folder), device=device))
-        avg_open_loop_rmse += open_loop_test(model, test_data_loader, additonal_info=folder, save_figures=save_figures)
-
-    avg_open_loop_rmse /= len(os.listdir(test_data_folder))
+    avg_open_loop_rmse /= len(test_datasets)
     
     wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse

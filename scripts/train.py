@@ -11,7 +11,7 @@ from trunk_gnn.model import TrunkGNN, TrunkMLP
 
 from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model, setup_config
 from trunk_gnn.dataset_utils import dataset_split
-from trunk_gnn.test_utils import open_loop_test_all
+from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -24,6 +24,7 @@ def train(
     train_data_loader,
     validation_data_loader,
     test_data_loader,
+    open_loop_test_data_sets,
 ):
     set_seed(wandb.config["seed"])
 
@@ -47,19 +48,19 @@ def train(
         )
 
         if i % 100 == 0:
-            open_loop_test_all(model, os.path.join(wandb.config["dataset_folder"], "test"))
+            open_loop_test_all(model, open_loop_test_data_sets)
 
 def main():
     print(f"Initialized wandb with config: {wandb.config}")
 
-    dataset = TrunkGraphDataset(os.path.join(wandb.config["dataset_folder"],"train"), device=device)
+    dataset = TrunkGraphDataset(os.path.join(wandb.config["dataset_folder"],"train"), device=device, link_step=wandb.config["link_step"])
     train_data_set, validation_data_set, test_data_set = dataset_split(
         dataset, [0.72, 0.14, 0.14]
     )
     
     if wandb.config["model"] == "gnn":
         print("Using GNN model")
-        model = TrunkGNN(num_links=dataset.num_links)
+        model = TrunkGNN()
     elif wandb.config["model"] == "mlp":
         print("Using MLP model")
         model = TrunkMLP(num_links=dataset.num_links)
@@ -82,6 +83,7 @@ def main():
         test_data_loader=DataLoader(
             test_data_set, batch_size=len(test_data_set), shuffle=wandb.config["shuffle"]
         ),
+        open_loop_test_data_sets=load_data_sets_from_folder(os.path.join(wandb.config["dataset_folder"],"test"), link_step=wandb.config["link_step"]),
     )
 
     if wandb.config["save_model"]:

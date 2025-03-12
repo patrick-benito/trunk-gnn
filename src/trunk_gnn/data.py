@@ -29,8 +29,11 @@ def denormalize_data(data, metrics):
 
 
 class TrunkGraphDataset(InMemoryDataset):
-    def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', add_noise = False, metrics = None, device = None):
-        super().__init__(root, transform=self.transform) # or use NormalizeFeatures
+    def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', add_noise = False, metrics = None, device = None, link_step = 1):
+        self.link_step = link_step
+        super().__init__(root, transform=self.transform, force_reload=True) # or use NormalizeFeatures
+        self.root = root
+        
         self.load(self.processed_paths[0])
         self.num_links = torch.load(self.processed_paths[1])
         if device:
@@ -73,6 +76,8 @@ class TrunkGraphDataset(InMemoryDataset):
     def transform(self,data):
         if self.add_noise:
             data = self.add_noise(data)
+        if isinstance(self.links,list):
+            pass
         if self.normalization_strategy == "normalize":
             return normalize_data(data, self.metrics)
         elif self.normalization_strategy == "denormalize":
@@ -84,7 +89,6 @@ class TrunkGraphDataset(InMemoryDataset):
 
     def process(self):
         # The process function is only executed if processed_files are missing.
-        
         data_list = []
         for raw_path in self.raw_paths:
 
@@ -92,19 +96,26 @@ class TrunkGraphDataset(InMemoryDataset):
             self.time_col = "t"
 
             #TODO: Currently infering from dataframe, should be passed as argument or metadata file.
-            self.num_links = len([key for key in self.dataframe.keys() if key.startswith("x") and not key.endswith("_new")])
             self.num_segments = len([key for key in self.dataframe.keys() if key.startswith("ux")])
 
-            self.state_cols, self.state_new_cols, self.control_cols = get_column_names(
-                self.num_segments, "pos_vel", list(range(1, self.num_links + 1))
-            )
+            num_links_mujoco = len([key for key in self.dataframe.keys() if key.startswith("x") and not key.endswith("_new")])
 
+            if isinstance(self.link_step, int):
+                self.links = list(range(num_links_mujoco, 0, -self.link_step))[::-1] # Ensures that endeffector is always included
+            else:
+                raise ValueError("Link step should be an integer.")
+            
+            self.num_links = len(self.links)
+                                
+            self.state_cols, self.state_new_cols, self.control_cols = get_column_names(
+                self.num_segments, "pos_vel", self.links
+            )
 
             d = 1 # d-local connections (currently in form of a chain)
             edge_index = torch.tensor([[i, j] for i in range(self.num_links) for j in range(self.num_links) if 0 < abs(i-j) < d+1]).T
 
             for idx in range(len(self.dataframe)):
-                ids = range(1, self.num_links + 1)
+                ids = self.links
                 t = self.dataframe.iloc[idx][self.time_col]
                 states = self.dataframe.iloc[idx][self.state_cols].values
                 controls = self.dataframe.iloc[idx][self.control_cols].values
