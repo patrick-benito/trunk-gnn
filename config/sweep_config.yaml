@@ -7,5 +7,5 @@ parameters:
     values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_harmonic','data/no_mass_harmonic']
-  use_input:
+  use_inputs:
     values: [True]
