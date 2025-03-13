@@ -6,6 +6,6 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/mass_100g_no_kick']
-  use_alpha:
-    values: [False, True]
+    values: ['data/mass_100g_harmonic','data/no_mass_harmonic']
+  use_input:
+    values: [True]

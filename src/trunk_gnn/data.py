@@ -3,7 +3,7 @@ from typing import Literal
 from torch_geometric.data import Data, InMemoryDataset, Dataset
 import pandas as pd
 from trunk_sim.data import get_column_names
-
+import os
 from torch_geometric.data import Data
 
 def add_noise(data, noise_std=0.1):
@@ -30,8 +30,19 @@ def denormalize_data(data, metrics):
 
 class TrunkGraphDataset(InMemoryDataset):
     def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', add_noise = False, metrics = None, device = None, link_step = 1):
+        
         self.link_step = link_step
-        super().__init__(root, transform=self.transform, force_reload=True) # or use NormalizeFeatures
+        force_reload = True
+
+        try:
+            if self.link_step != int(torch.load(os.path.join(root, 'processed', 'link_step.pt'))):
+                force_reload = True
+                print("Link step changed, reloading dataset.")
+        except FileNotFoundError:
+            pass
+
+
+        super().__init__(root, transform=self.transform, force_reload=force_reload) # or use NormalizeFeatures
         self.root = root
         
         self.load(self.processed_paths[0])
@@ -51,7 +62,7 @@ class TrunkGraphDataset(InMemoryDataset):
     
     @property
     def processed_file_names(self):
-        return ['processed_data.pt', 'num_links.pt']
+        return ['processed_data.pt', 'num_links.pt', 'link_step.pt']
     
     def compute_metrics(self):
         metrics = {}
@@ -76,8 +87,6 @@ class TrunkGraphDataset(InMemoryDataset):
     def transform(self,data):
         if self.add_noise:
             data = self.add_noise(data)
-        if isinstance(self.links,list):
-            pass
         if self.normalization_strategy == "normalize":
             return normalize_data(data, self.metrics)
         elif self.normalization_strategy == "denormalize":
@@ -124,11 +133,12 @@ class TrunkGraphDataset(InMemoryDataset):
                 # Convert to PyTorch tensors
                 t = torch.tensor(t, dtype=torch.float32)
                 x = torch.tensor(states, dtype=torch.float32).reshape(self.num_links, -1)
-                u = torch.tensor(controls, dtype=torch.float32)
+                u = torch.tensor(controls, dtype=torch.float32).repeat(self.num_links, 1)
                 x_new = torch.tensor(next_states, dtype=torch.float32).reshape(self.num_links, -1)
                 ids = torch.tensor(ids, dtype=torch.float32).reshape(self.num_links, -1)
 
                 data_list.append(Data(t=t, x=x, u=u, x_new=x_new, edge_index=edge_index, ids=ids))
- 
+
         self.save(data_list, self.processed_paths[0])
         torch.save(self.num_links, self.processed_paths[1])
+        torch.save(self.link_step, self.processed_paths[2])

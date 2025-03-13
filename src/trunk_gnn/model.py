@@ -66,12 +66,12 @@ class GNNBlock(MessagePassing):
             hidden_features=wandb.config["node_hidden_features"],
         ) # x' <- f_v(x, e)
 
-    def forward(self, x, edge_index, edge_attr=None):
+    def forward(self, x, edge_index, edge_attr=None, u=None):
         # Update edge features
         marsh_edge_attr = self.update_edges(x, edge_index, edge_attr)
 
         # Call message and update consecutively
-        x = self.propagate(edge_index, x=x, marsh_edge_attr=marsh_edge_attr)
+        x = self.propagate(edge_index, x=x, marsh_edge_attr=marsh_edge_attr, u=u)
 
         return x, edge_attr
 
@@ -84,12 +84,15 @@ class GNNBlock(MessagePassing):
     def message(self, marsh_edge_attr):
         return marsh_edge_attr
 
-    def update(self, aggr_out, x):
+    def update(self, aggr_out, x, u):
         if wandb.config["use_velocity_only"]:
             x[:,:3] = 0
 
         if not wandb.config["use_edge_mlp"]:
             aggr_out = torch.zeros_like(aggr_out)
+        
+        if wandb.config["use_inputs"]:
+            x = torch.hstack([x, u])
 
         x_large = torch.cat([x, aggr_out], dim=1)
         return self.node_mlp(x_large)
@@ -111,13 +114,17 @@ class TrunkGNN(nn.Module):
 
         self.alpha_mlp = MLP(1, 1, num_hidden_layers=1, hidden_features=5)
         self.alpha_mlp_inv = MLP(1, 1, num_hidden_layers=1, hidden_features=5)
-        
+
         node_channels_in = 6
+
         if wandb.config["use_ids"]:
             node_channels_in += 1
 
         edge_channels_in = node_channels_in
 
+        if wandb.config["use_inputs"]:
+            node_channels_in += 6
+         
         for _ in range(num_blocks):
             self.layers.append(
                 GNNBlock(
@@ -147,7 +154,7 @@ class TrunkGNN(nn.Module):
         if wandb.config["use_ids"]:
             x_bar = torch.hstack([x_bar, ids])
 
-        dv, _ = layer(x_bar, data.edge_index, data.edge_attr)
+        dv, _ = layer(x_bar, data.edge_index, data.edge_attr, data.u)
         
         if wandb.config["use_alpha"]:
             dv = dv * self.alpha_mlp_inv(ids)

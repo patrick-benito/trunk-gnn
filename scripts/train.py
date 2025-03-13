@@ -98,7 +98,7 @@ def get_args():
     parser.add_argument(
         "--dataset_folder",
         type=str,
-        default="data/mass_100g_no_kick/",
+        default="data/mass_100g_harmonic/",
         help="Path of the training dataset file.",
     )
     parser.add_argument(

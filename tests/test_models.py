@@ -1,40 +1,57 @@
+import argparse
 import torch
 from torch_geometric.data import Data
 import pytest
+import wandb
+import os
+from torch_geometric.loader import DataLoader
 
-from src.algos.gnn import ResidualGNN
+from trunk_gnn.model import TrunkGNN, TrunkMLP
+from trunk_gnn.data import TrunkGraphDataset
+from trunk_gnn.train_utils import init_wandb, setup_config
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def generate_test_data():
-    # Define synthetic data
-    num_nodes = 4
-    node_channels = 3
-    edge_channels = 2
-
-    x = torch.randn((num_nodes, node_channels))
-    edge_index = torch.tensor([[0, 2, 2, 3], [1, 1, 3, 0]], dtype=torch.long)
-
-    num_edges = edge_index.size(1)
-    edge_attr = torch.randn((num_edges, edge_channels))
-
-    return x, edge_index, edge_attr
-
-
-def test_residual_gnn_update():
-    x, edge_index, edge_attr = generate_test_data()
-    x_prev, edge_attr_prev = x.clone(), edge_attr.clone()
-
-    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
-    model = ResidualGNN(
-        node_channels=x.size(1), edge_channels=edge_attr.size(1), num_blocks=1
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, default=None, help="Model to train.")
+    parser.add_argument(
+        "--dataset_folder",
+        type=str,
+        default="data/mass_100g_harmonic/",
+        help="Path of the training dataset file.",
     )
+    parser.add_argument(
+        "--num_epochs", type=int, default=None, help="Number of training epochs."
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=None, help="Batch size for training."
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=None,
+        help="Learning rate for optimization.",
+    )
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--wandb", action="store_true", default=False)
+    parser.add_argument("--notes", type=str, default="", help="Save notes")
+    parser.add_argument("--save_model", action="store_true", default=False)
 
-    output = model(data)
+    return parser.parse_args()
 
-    assert output.x.shape == x_prev.shape, "Node features shape mismatch"
-    assert output.edge_attr.shape == edge_attr.shape, "Edge attributes shape mismatch"
 
-    assert not torch.allclose(output.x, x_prev), "Node features were not modified"
-    assert not torch.allclose(
-        output.edge_attr, edge_attr_prev
-    ), "Edge attributes were not modified"
+def test_gnn():
+    init_wandb(setup_config(get_args()))
+    model = TrunkGNN().to(device)
+    small_set = os.path.join(wandb.config["dataset_folder"],"test", "1")
+    dataset = TrunkGraphDataset(small_set, device=device)
+    dataloader = DataLoader(dataset, batch_size=10, shuffle=True)
+
+    model.eval()
+
+    for data in dataloader:
+        assert model(data) is not None
+
+if __name__ == "__main__":
+    test_gnn()
