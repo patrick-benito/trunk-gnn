@@ -169,12 +169,14 @@ class TrunkGNN(nn.Module):
 
 ## MLP model as a baseline ##
 class TrunkMLP(nn.Module):
-    def __init__(self, num_links):
+    def __init__(self):
         super(TrunkMLP, self).__init__()
     
-        self.num_links = num_links
-        self.in_features = 3*num_links
-        self.out_features = 3*num_links
+        self.num_links = int(30/wandb.config["link_step"])
+        self.in_features = 6*self.num_links
+        if wandb.config["use_inputs"]:
+            self.in_features += 6
+        self.out_features = 3*self.num_links
         self.model = MLP(self.in_features, self.out_features, num_hidden_layers=4, hidden_features=150)
         self.dt = 0.01
 
@@ -183,8 +185,14 @@ class TrunkMLP(nn.Module):
         #TODO: Only handles unshuffled data
         
         x = data.x
-        vel = x@velocity_mask
-        dv = self.model(vel.view(-1, self.in_features))
+        u = data.u
+
+        if wandb.config["use_inputs"]:
+            vec = torch.hstack([x.view(-1,6*self.num_links), u.view(-1, self.num_links, 6)[:,0,:]])
+        else:
+            vec = x.view(-1,self.in_features)
+
+        dv = self.model(vec)
         dv = dv.view(-1, 3)
         
         v_new = x[:,3:] + dv

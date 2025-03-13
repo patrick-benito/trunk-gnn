@@ -32,7 +32,7 @@ class TrunkGraphDataset(InMemoryDataset):
     def __init__(self, root,  normalization_strategy: Literal['none', 'normalize', 'inverse'] = 'none', add_noise = False, metrics = None, device = None, link_step = 1):
         
         self.link_step = link_step
-        force_reload = True
+        force_reload = False
 
         try:
             if self.link_step != int(torch.load(os.path.join(root, 'processed', 'link_step.pt'))):

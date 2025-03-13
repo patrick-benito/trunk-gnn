@@ -63,8 +63,9 @@ def main():
         model = TrunkGNN()
     elif wandb.config["model"] == "mlp":
         print("Using MLP model")
-        model = TrunkMLP(num_links=dataset.num_links)
-        wandb.config["shuffle"] = False # MLP does not support shuffling
+        model = TrunkMLP()
+        assert wandb.config["link_step"] == 1, "MLP model only supports link_step=1"
+        assert wandb.config["shuffle"] == False, "MLP model only supports shuffle=False"
     else:
         raise ValueError(f"Model {wandb.config['model']} not supported.")
     

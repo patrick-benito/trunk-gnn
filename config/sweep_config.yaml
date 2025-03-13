@@ -4,8 +4,10 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: ['gnn']
+    values: ['mlp']
   dataset_folder:
     values: ['data/mass_100g_harmonic','data/no_mass_harmonic']
   use_inputs:
     values: [True]
+  shuffle:
+    values: [False]
