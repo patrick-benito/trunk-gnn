@@ -8,4 +8,6 @@ parameters:
   dataset_folder:
     values: ['data/mass_100g_harmonic','data/no_mass_harmonic']
   use_resting_state:
+    values: [True]
+  use_ids:
     values: [True, False]

@@ -152,7 +152,7 @@ class TrunkGNN(nn.Module):
             x_bar = x_bar * self.alpha_mlp(ids)
             
         if wandb.config["use_ids"]:
-            x_bar = torch.hstack([x_bar, ids])
+            x_bar = torch.hstack([x_bar, ids/30])
 
         dv, _ = layer(x_bar, data.edge_index, data.edge_attr, data.u)
         
