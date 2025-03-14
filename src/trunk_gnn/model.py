@@ -51,7 +51,25 @@ class GNNBlock(MessagePassing):
     def __init__(
         self, node_channels_in, edge_channels_in, node_channels_out, edge_channels_out
     ):
+        node_encoder_out = edge_channels_out if wandb.config["encode_nodes"] else node_channels_in
+        input_encoder_out = edge_channels_out if wandb.config["encode_inputs"] else 6
+        if not wandb.config["use_inputs"]:
+            input_encoder_out = 0
+
         super().__init__(aggr="sum", flow="source_to_target")
+        self.node_encoder = MLP(
+            node_channels_in,
+            node_encoder_out,
+            num_hidden_layers=4,
+            hidden_features=50,
+        )
+        self.input_encoder = MLP(
+            6,
+            input_encoder_out,
+            num_hidden_layers=4,
+            hidden_features=50,
+        )
+
         self.edge_mlp = MLP(
             edge_channels_in,
             edge_channels_out,
@@ -60,7 +78,7 @@ class GNNBlock(MessagePassing):
         ) # e' <- f_e(e, x_i, x_j)
 
         self.node_mlp = MLP(
-            node_channels_in + edge_channels_out,
+            node_encoder_out + edge_channels_out + input_encoder_out,
             node_channels_out,
             num_hidden_layers=wandb.config["node_num_hidden_layers"],
             hidden_features=wandb.config["node_hidden_features"],
@@ -69,11 +87,17 @@ class GNNBlock(MessagePassing):
     def forward(self, x, edge_index, edge_attr=None, u=None):
         # Update edge features
         marsh_edge_attr = self.update_edges(x, edge_index, edge_attr)
-
+        
         # Call message and update consecutively
-        x = self.propagate(edge_index, x=x, marsh_edge_attr=marsh_edge_attr, u=u)
+        if wandb.config["encode_inputs"]:
+            u = self.input_encoder(u)
 
-        return x, edge_attr
+        if wandb.config["encode_nodes"]:
+            x = self.node_encoder(x)
+
+        x, metrics = self.propagate(edge_index, x=x, marsh_edge_attr=marsh_edge_attr, u=u)
+
+        return x, edge_attr, metrics
 
     def update_edges(self, x, edge_index, edge_attr=None):
         sender, receiver = edge_index
@@ -85,6 +109,14 @@ class GNNBlock(MessagePassing):
         return marsh_edge_attr
 
     def update(self, aggr_out, x, u):
+        metrics = {}
+        if not self.training and wandb.config["log_metrics"]:
+            metrics = {
+                "x_norm": x.norm(dim=1).mean(),
+                "u_norm": u.norm(dim=1).mean(),
+                "aggr_out_norm": aggr_out.norm(dim=1).mean()
+            }
+
         if wandb.config["use_velocity_only"]:
             x[:,:3] = 0
 
@@ -95,7 +127,8 @@ class GNNBlock(MessagePassing):
             x = torch.hstack([x, u])
 
         x_large = torch.cat([x, aggr_out], dim=1)
-        return self.node_mlp(x_large)
+        
+        return self.node_mlp(x_large), metrics
 
 
 ## GNN model ##
@@ -108,7 +141,7 @@ class TrunkGNN(nn.Module):
         self.num_links = 30
         self.num_blocks = 1
         self.dt = 0.01
-        self.link_delta_z_pos = -0.0106666666666666
+        self.link_delta_z_pos = -0.0106666666666666 # TODO: this is bad for edge mlp
         # compute the resting state of the links as [0,0,link_delta_z_pos * i,0,0,0] for i in (1,2,3,...,30). We incude 0 so that index matches the link number
         self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, self.num_links+1)).reshape(-1,1)).to(self.device)
 
@@ -121,9 +154,6 @@ class TrunkGNN(nn.Module):
             node_channels_in += 1
 
         edge_channels_in = node_channels_in
-
-        if wandb.config["use_inputs"]:
-            node_channels_in += 6
          
         for _ in range(num_blocks):
             self.layers.append(
@@ -154,7 +184,7 @@ class TrunkGNN(nn.Module):
         if wandb.config["use_ids"]:
             x_bar = torch.hstack([x_bar, ids/30])
 
-        dv, _ = layer(x_bar, data.edge_index, data.edge_attr, data.u)
+        dv, _, metrics = layer(x_bar, data.edge_index, data.edge_attr, data.u)
         
         if wandb.config["use_alpha"]:
             dv = dv * self.alpha_mlp_inv(ids)
@@ -164,7 +194,7 @@ class TrunkGNN(nn.Module):
 
         full_x_new = torch.cat([x_new, v_new], dim=1)
         
-        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new)
+        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new, metrics=metrics)
 
 
 ## MLP model as a baseline ##

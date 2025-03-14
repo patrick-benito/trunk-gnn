@@ -41,7 +41,7 @@ def get_args():
     parser.add_argument(
         "--test_dataset_folder",
         type=str,
-        default="./data/mass_100g_no_kick/test/",
+        default="./data/mass_100g_harmonic/test/",
         help="Path of the testing dataset folders"
     )
     parser.add_argument("--artifact_name", type=str, default=None, help="Artifact name to download from wandb.")

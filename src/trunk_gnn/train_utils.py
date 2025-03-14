@@ -112,13 +112,23 @@ def epoch(
 
     # Test
     test_loss, zoh_loss = 0, 0
+    metrics = {}
     with torch.no_grad():
         for test_batch in test_data_loader:
-            test_loss += criterion(model(test_batch).x_new@mask, test_batch.x_new@mask).item()
+            pred = model(test_batch)
+            for key, value in pred.metrics.items():
+                if key not in metrics:
+                    metrics[key] = []
+                metrics[key].append(value)
+            
+            test_loss += criterion(pred.x_new@mask, test_batch.x_new@mask).item()
             zoh_loss += criterion(test_batch.x@mask, test_batch.x_new@mask).item()
         test_loss /= len(test_data_loader)
         zoh_loss /= len(test_data_loader)
 
+    for key, value in metrics.items():
+        metrics[key] = torch.mean(torch.tensor(value)).item()
+    
     wandb.log(
         {
             "train_loss": train_loss,
@@ -126,6 +136,7 @@ def epoch(
             "test_loss": test_loss,
             "zoh_test_loss": zoh_loss,
             "learning_rate": float(scheduler.get_last_lr()[0]),
+            **metrics
         }
     )
 

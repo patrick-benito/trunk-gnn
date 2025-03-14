@@ -12,6 +12,9 @@ use_edge_mlp: True  # Whether to use an edge MLP
 use_alpha: False  # Whether to normalize the state vector by a MLP
 link_step: 1 # Number of steps in links to be modeled in the GNN, 1 => 30 links, 2 => 15 links, 3 => 10 links, 10 => 3 links
 use_inputs: True  # Whether to use input features
+encode_nodes: False  # Whether to encode nodes
+encode_inputs: False  # Whether to encode edges
+
 
 # Training configuration
 learning_rate: 1.0e-3  # Learning rate for optimization
@@ -22,3 +25,6 @@ gradient_clipping_max_norm: Null  # Maximum norm for gradient clipping
 scheduler_patience: 100  # Patience for learning rate scheduler
 shuffle: True  # Whether to shuffle the training data
 seed: 0  # Random seed for reproducibility
+
+# Other
+log_metrics: True  # Whether to log metrics

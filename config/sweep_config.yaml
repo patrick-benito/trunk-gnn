@@ -7,5 +7,9 @@ parameters:
     values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
-  node_hidden_features:
-    values: [25, 50, 100, 150, 200, 400]
+  encode_nodes:
+    values: [True, False]
+  encode_inputs:
+    values: [True, False]
+  num_epochs:
+    values: [500]
