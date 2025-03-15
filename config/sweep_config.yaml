@@ -7,7 +7,7 @@ parameters:
     values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
-  use_edge_mlp_diff_features_only:
-    values: [False, True]
-  use_resting_state:
-    values: [False, True]
+  batch_norm:
+    values: [True, False]
+  layer_norm:
+    values: [True, False]

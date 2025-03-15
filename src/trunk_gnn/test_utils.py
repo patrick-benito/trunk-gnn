@@ -115,8 +115,6 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
-    print(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024 ** 3:.2f} GB")
-    print(f"GPU memory cached: {torch.cuda.memory_reserved(device) / 1024 ** 3:.2f} GB")
     states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
     fig_positions = plot_rollout(states, gt_states, links=[1, 10, 20, 30])

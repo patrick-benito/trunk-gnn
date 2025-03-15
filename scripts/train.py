@@ -82,7 +82,7 @@ def main():
             validation_data_set, batch_size=wandb.config["batch_size"], shuffle=wandb.config["shuffle"]
         ),
         test_data_loader=DataLoader(
-            test_data_set, batch_size=len(test_data_set), shuffle=wandb.config["shuffle"]
+            test_data_set, batch_size=wandb.config["batch_size"], shuffle=wandb.config["shuffle"]
         ),
         open_loop_test_data_sets=load_data_sets_from_folder(os.path.join(wandb.config["dataset_folder"],"test"), link_step=wandb.config["link_step"]),
     )
