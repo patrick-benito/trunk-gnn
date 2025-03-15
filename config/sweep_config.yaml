@@ -7,7 +7,9 @@ parameters:
     values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
-  batch_norm:
-    values: [True, False]
-  layer_norm:
-    values: [True, False]
+  l1_weight:
+    values: [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
+  weight_decay:
+    values: [0.0]
+  shuffle:
+    values: [False]

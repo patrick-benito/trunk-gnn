@@ -7,8 +7,14 @@ from typing import Optional
 import yaml
 import json
 
+def compute_l1_norm(model):
+    l1_norm = 0
+    for param in model.parameters():
+        l1_norm += torch.sum(torch.abs(param))
+    return l1_norm
+
 def weight_norms(model):
-    norm = {name: None for name in ["input_encoder", "node_encoder", "node_mlp", "edge_mlp"]}
+    norm = {name: None for name in ["input_encoder", "node_encoder", "node_mlp", "edge_mlp", "model"]}
     for key, value in model.state_dict().items():
         for name in norm.keys():
             if name in key and "weight" in key:
@@ -99,6 +105,10 @@ def epoch(
         optimizer.zero_grad()
         pred = model(train_batch)
         loss = criterion(pred.x_new@mask, train_batch.x_new@mask)
+        
+        # Add L1 regularization
+        loss += compute_l1_norm(model) * wandb.config["l1_weight"]
+        
         loss.backward()
 
         if gradient_clipping_max_norm is not None:

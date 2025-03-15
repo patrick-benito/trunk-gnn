@@ -248,4 +248,4 @@ class TrunkMLP(nn.Module):
 
         full_x_new = torch.cat([x_new, v_new], dim=1)
 
-        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new)
+        return Data(x=data.x, edge_index=data.edge_index, edge_attr=data.edge_attr, t=data.t, u=data.u, x_new=full_x_new, metrics={})
