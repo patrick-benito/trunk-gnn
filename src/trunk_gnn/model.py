@@ -18,20 +18,27 @@ class MLP(nn.Module):
         num_hidden_layers=2,
         hidden_features=128,
         layernorm=False,
+        batchnorm=False,
     ):
         super(MLP, self).__init__()
 
+        layers = []
         if num_hidden_layers == 0:
-            layers = [nn.Linear(in_features, out_features)]
+            layers.append(nn.Linear(in_features, out_features))
         else:
-            layers = [nn.Linear(in_features, hidden_features), nn.ReLU()]
+            layers.append(nn.Linear(in_features, hidden_features))
+            if batchnorm:
+                layers.append(nn.BatchNorm1d(hidden_features))
+            layers.append(nn.ReLU())
             for _ in range(num_hidden_layers):
                 layers.append(nn.Linear(hidden_features, hidden_features))
+                if batchnorm:
+                    layers.append(nn.BatchNorm1d(hidden_features))
                 layers.append(nn.ReLU())
             layers.append(nn.Linear(hidden_features, out_features))
 
         if layernorm:
-            layers.append(torch.nn.LayerNorm(out_features))
+            layers.append(nn.LayerNorm(out_features))
 
         self.model = nn.Sequential(*layers)
 
@@ -39,7 +46,7 @@ class MLP(nn.Module):
 
     def reset_parameters(self):
         for layer in self.model:
-            if isinstance(layer, torch.nn.Linear):
+            if isinstance(layer, nn.Linear):
                 layer.weight.data.normal_(0, 1 / math.sqrt(layer.in_features))
                 layer.bias.data.fill_(0)
 
@@ -76,6 +83,9 @@ class GNNBlock(MessagePassing):
             edge_channels_out,
             num_hidden_layers=wandb.config["edge_num_hidden_layers"],
             hidden_features=wandb.config["edge_hidden_features"],
+            batchnorm=wandb.config["batch_norm"],
+            layernorm=wandb.config["layer_norm"],
+
         ) # e' <- f_e(e, x_i, x_j)
 
         self.node_mlp = MLP(
@@ -83,6 +93,8 @@ class GNNBlock(MessagePassing):
             node_channels_out,
             num_hidden_layers=wandb.config["node_num_hidden_layers"],
             hidden_features=wandb.config["node_hidden_features"],
+            batchnorm=wandb.config["batch_norm"],
+            layernorm=wandb.config["layer_norm"],
         ) # x' <- f_v(x, e)
 
     def forward(self, x, edge_index, edge_attr=None, u=None):

@@ -15,7 +15,8 @@ link_step: 1 # Number of steps in links to be modeled in the GNN, 1 => 30 links,
 use_inputs: True  # Whether to use input features
 encode_nodes: False  # Whether to encode nodes
 encode_inputs: False  # Whether to encode edges
-
+batch_norm: False  # Whether to use batch normalization
+layer_norm: False  # Whether to use layer normalization
 
 # Training configuration
 learning_rate: 1.0e-3  # Learning rate for optimization

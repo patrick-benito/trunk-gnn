@@ -5,11 +5,21 @@ import os
 import shutil
 from typing import Optional
 import yaml
+import json
+
+def weight_norms(model):
+    norm = {name: None for name in ["input_encoder", "node_encoder", "node_mlp", "edge_mlp"]}
+    for key, value in model.state_dict().items():
+        for name in norm.keys():
+            if name in key and "weight" in key:
+                norm[name] = value.norm() if norm[name] is None else norm[name] * value.norm()
+    return norm
+
 
 def load_config(file_path):
     with open(file_path, "r") as file:
         return yaml.safe_load(file)
-    
+
 
 def setup_config(args):
     config = load_config(os.path.join("config","default_config.yaml"))
@@ -136,6 +146,7 @@ def epoch(
             "test_loss": test_loss,
             "zoh_test_loss": zoh_loss,
             "learning_rate": float(scheduler.get_last_lr()[0]),
+            "weight_norms": weight_norms(model),
             **metrics
         }
     )
