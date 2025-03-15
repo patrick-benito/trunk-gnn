@@ -64,18 +64,22 @@ class GNNBlock(MessagePassing):
             input_encoder_out = 0
 
         super().__init__(aggr="sum", flow="source_to_target")
-        self.node_encoder = MLP(
-            node_channels_in,
-            node_encoder_out,
-            num_hidden_layers=4,
-            hidden_features=50,
-        )
-        self.input_encoder = MLP(
-            6,
-            input_encoder_out,
-            num_hidden_layers=4,
-            hidden_features=50,
-        )
+
+        if wandb.config["encode_nodes"]:
+            self.node_encoder = MLP(
+                node_channels_in,
+                node_encoder_out,
+                num_hidden_layers=4,
+                hidden_features=50,
+            )
+            
+        if wandb.config["encode_inputs"]:
+            self.input_encoder = MLP(
+                6,
+                input_encoder_out,
+                num_hidden_layers=4,
+                hidden_features=50,
+            )
         
 
         self.edge_mlp = MLP(

@@ -95,7 +95,7 @@ def epoch(
     # Training
     model.train()
     train_loss = 0
-    for train_batch in train_data_loader:       
+    for train_batch in train_data_loader:
         optimizer.zero_grad()
         pred = model(train_batch)
         loss = criterion(pred.x_new@mask, train_batch.x_new@mask)

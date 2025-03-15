@@ -32,31 +32,32 @@ def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[Tru
     return datasets
 
 def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torch.Tensor, torch.Tensor]:
-    start_time = time.time()
-    start_index = 0
+    with torch.no_grad():
+        start_time = time.time()
+        start_index = 0
 
-    model.eval()
-    state = ground_truth[start_index].clone()
-    state.x_new = None # Not used in rollout
+        model.eval()
+        state = ground_truth[start_index].clone()
+        state.x_new = None # Not used in rollout
 
-    state_list = []
-    state_list_gt = []
+        state_list = []
+        state_list_gt = []
 
-    for i in range(start_index,len(ground_truth)):
-        gt = ground_truth[i]
-        state_list.append(state.x)
-        state_list_gt.append(gt.x)
-        
-        state.t, state.u = gt.t, gt.u
-        x_new = model(state).x_new
-        state.x = x_new
+        for i in range(start_index,len(ground_truth)):
+            gt = ground_truth[i]
+            state_list.append(state.x.detach())
+            state_list_gt.append(gt.x)
+            
+            state.t, state.u = gt.t, gt.u
+            x_new = model(state).x_new
+            state.x = x_new
 
-    state_list = torch.stack(state_list)
-    state_list_gt = torch.stack(state_list_gt)
+        state_list = torch.stack(state_list)
+        state_list_gt = torch.stack(state_list_gt)
 
-    delta_time = time.time() - start_time
+        delta_time = time.time() - start_time
 
-    return state_list, state_list_gt, delta_time
+        return state_list, state_list_gt, delta_time
 
 def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) -> torch.Tensor:
     N = states.shape[1]
@@ -114,6 +115,8 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
+    print(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024 ** 3:.2f} GB")
+    print(f"GPU memory cached: {torch.cuda.memory_reserved(device) / 1024 ** 3:.2f} GB")
     states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
     fig_positions = plot_rollout(states, gt_states, links=[1, 10, 20, 30])
