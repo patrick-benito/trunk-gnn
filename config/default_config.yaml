@@ -9,6 +9,7 @@ use_ids: False  # Whether to use node IDs as input features
 use_velocity_only: False  # Whether to use only velocities as input features
 use_resting_state: False  # Whether to use resting state as input features
 use_edge_mlp: True  # Whether to use an edge MLP
+use_edge_mlp_diff_features_only: False  # Whether to use difference between features for the edge MLP only
 use_alpha: False  # Whether to normalize the state vector by a MLP
 link_step: 1 # Number of steps in links to be modeled in the GNN, 1 => 30 links, 2 => 15 links, 3 => 10 links, 10 => 3 links
 use_inputs: True  # Whether to use input features

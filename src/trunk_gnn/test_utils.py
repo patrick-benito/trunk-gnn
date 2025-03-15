@@ -144,3 +144,24 @@ def open_loop_test_all(model: torch.nn.Module, test_datasets: List[TrunkGraphDat
     
     wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse
+
+
+def download_artifacts(artifact_name):
+    api = wandb.Api()
+    artifact = api.artifact(artifact_name)
+    artifact.download(root="artifacts")
+
+
+def load_model(model_type, artifacts_folder = "./artifacts/", artifact_name = None):
+    if artifact_name:
+        download_artifacts(artifact_name)
+
+    model_data = torch.load(os.path.join(artifacts_folder, "model_data.pth"))
+    wandb.init(mode="disabled", config=model_data['config'])
+    print(f"Initialized wandb with config: {wandb.config}")
+
+    model = model_type()
+    model.load_state_dict(torch.load(os.path.join(artifacts_folder, "model_state_dict.pth")))
+    model.to(device)
+
+    return model

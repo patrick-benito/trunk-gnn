@@ -11,26 +11,12 @@ from trunk_gnn.model import TrunkGNN, TrunkMLP
 
 from trunk_gnn.train_utils import init_wandb, set_seed, epoch, save_model
 from trunk_gnn.dataset_utils import dataset_split
-from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder
+from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder, load_model
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def download_artifacts(artifact_name):
-    api = wandb.Api()
-    artifact = api.artifact(artifact_name)
-    artifact.download(root="artifacts")
-
 def main(args):
-    if args.artifact_name:
-        download_artifacts(args.artifact_name)
-
-    model_data = torch.load(os.path.join(args.artifacts_folder, "model_data.pth"))
-    wandb.init(mode="disabled", config=model_data['config'])
-    print(f"Initialized wandb with config: {wandb.config}")
-
-    model = TrunkGNN()
-    model.load_state_dict(torch.load(os.path.join(args.artifacts_folder, "model_state_dict.pth")))
-    model.to(device)
+    model = load_model(TrunkGNN, args.artifacts_folder, args.artifact_name)
     
     with torch.no_grad():
         open_loop_test_all(model, load_data_sets_from_folder(args.test_dataset_folder), save_figures=True)

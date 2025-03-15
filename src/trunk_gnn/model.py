@@ -69,6 +69,7 @@ class GNNBlock(MessagePassing):
             num_hidden_layers=4,
             hidden_features=50,
         )
+        
 
         self.edge_mlp = MLP(
             edge_channels_in,
@@ -101,9 +102,12 @@ class GNNBlock(MessagePassing):
 
     def update_edges(self, x, edge_index, edge_attr=None):
         sender, receiver = edge_index
-        diff = x[receiver] - x[sender]
+        if wandb.config["use_edge_mlp_diff_features_only"]:
+            edge_large = x[receiver] - x[sender]
+        else:
+            edge_large = torch.cat([x[sender], x[receiver]], dim=1)
 
-        return self.edge_mlp(torch.cat([diff], dim=1))
+        return self.edge_mlp(edge_large)
 
     def message(self, marsh_edge_attr):
         return marsh_edge_attr
@@ -153,14 +157,12 @@ class TrunkGNN(nn.Module):
         if wandb.config["use_ids"]:
             node_channels_in += 1
 
-        edge_channels_in = node_channels_in
-         
         for _ in range(num_blocks):
             self.layers.append(
                 GNNBlock(
                     node_channels_in=node_channels_in,
                     node_channels_out=3,
-                    edge_channels_in=edge_channels_in,
+                    edge_channels_in=node_channels_in if wandb.config['use_edge_mlp_diff_features_only'] else node_channels_in * 2,
                     edge_channels_out=wandb.config["edge_channels_out"],
                 )
             )
