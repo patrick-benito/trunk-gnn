@@ -4,7 +4,7 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: ['gnn']
+    values: ['mlp']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
   l1_weight:
