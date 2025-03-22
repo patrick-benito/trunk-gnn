@@ -10,6 +10,10 @@ parameters:
   shuffle:
     values: [False]
   mlp_num_hidden_layers:
-    values: [4, 8]
+    values: [4]
   mlp_hidden_features:
-    values: [150, 300]
+    values: [150]
+  weight_decay:
+    values: [0.0]
+  l1_weight:
+    values: [1e-08, 1e-07, 1e-06, 1e-05, 1e-04, 1e-03]
