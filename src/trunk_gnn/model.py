@@ -225,7 +225,7 @@ class TrunkMLP(nn.Module):
         if wandb.config["use_inputs"]:
             self.in_features += 6
         self.out_features = 3*self.num_links
-        self.model = MLP(self.in_features, self.out_features, num_hidden_layers=4, hidden_features=150)
+        self.model = MLP(self.in_features, self.out_features, num_hidden_layers=wandb.config['mlp_num_hidden_layers'], hidden_features=wandb.config['mlp_hidden_features'])
         self.dt = 0.01
 
     def forward(self, _data: Data):

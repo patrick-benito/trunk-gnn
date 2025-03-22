@@ -4,8 +4,12 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: ['gnn']
+    values: ['mlp']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
-  node_hidden_features:
-    values: [50]
+  shuffle:
+    values: [False]
+  mlp_num_hidden_layers:
+    values: [4, 8]
+  mlp_hidden_features:
+    values: [150, 300]
