@@ -4,12 +4,8 @@ metric:
   goal: minimize
 parameters:
   model:
-    values: ['mlp']
+    values: ['gnn']
   dataset_folder:
     values: ['data/mass_100g_harmonic']
-  l1_weight:
-    values: [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
-  weight_decay:
-    values: [0.0]
-  shuffle:
-    values: [False]
+  node_hidden_features:
+    values: [50]

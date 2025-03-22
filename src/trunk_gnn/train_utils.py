@@ -5,7 +5,7 @@ import os
 import shutil
 from typing import Optional
 import yaml
-import json
+from argparse import Namespace
 
 def compute_l1_norm(model):
     l1_norm = 0
@@ -29,7 +29,8 @@ def load_config(file_path):
 
 def setup_config(args):
     config = load_config(os.path.join("config","default_config.yaml"))
-    for key, value in vars(args).items():
+    items = vars(args).items() if isinstance(args, Namespace) else args.items()
+    for key, value in items:
         if value is not None:
             config[key] = value
     config['commit'] = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")

@@ -10,6 +10,8 @@ from trunk_gnn.data import TrunkGraphDataset
 import time
 from typing import List
 
+from trunk_gnn.train_utils import setup_config
+
 map_link = lambda link, n_links: min(max(round(link/30*n_links) - 1, 0), n_links-1)
 map_link_mujoco = lambda link, n_links: round((map_link(link,n_links)+1) / n_links * 30)
 
@@ -158,7 +160,7 @@ def load_model(model_type, artifacts_folder = "./artifacts/", artifact_name = No
         download_artifacts(artifact_name)
 
     model_data = torch.load(os.path.join(artifacts_folder, "model_data.pth"))
-    wandb.init(mode="disabled", config=model_data['config'])
+    wandb.init(mode="disabled", config=setup_config(model_data['config']))
     print(f"Initialized wandb with config: {wandb.config}")
 
     model = model_type()
