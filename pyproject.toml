@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "jax[cuda12]>=0.5.2",
+    "scienceplots>=2.1.1",
     "torch>=2.6.0",
     "torch-geometric>=2.6.1",
     "tqdm>=4.67.1",
@@ -29,3 +30,6 @@ package = true
 
 [tool.uv.sources]
 trunk-sim = { path = "../trunk-sim" }
+
+[tool.uv.sources.config]
+path = "config.yaml"

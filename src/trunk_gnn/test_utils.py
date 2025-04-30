@@ -2,13 +2,13 @@ import numpy as np
 import torch
 import wandb
 from torch_geometric.data import Data
-import matplotlib.pyplot as plt
-from trunk_sim import visualization
-import os
-from torch_geometric.loader import DataLoader
-from trunk_gnn.data import TrunkGraphDataset
 import time
 from typing import List
+import os
+
+from torch_geometric.loader import DataLoader
+from trunk_gnn.data import TrunkGraphDataset
+from trunk_gnn.plotting import plt
 
 from trunk_gnn.train_utils import setup_config
 
@@ -70,17 +70,20 @@ def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) ->
     return torch.sqrt(torch.mean((target_states - target_states_gt) ** 2))
 
 def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(5,5))
     ax = fig.add_subplot(111, projection='3d')
 
     states = states.detach().cpu().numpy()
     states_gt = states_gt.detach().cpu().numpy()
     N = states.shape[1]
 
-    for i in links:
-        ax.plot(states[:, map_link(i,N), 0], states[:, map_link(i,N), 1], states[:, map_link(i,N), 2], label=f'Prediction {map_link_mujoco(i,N)}')
-        ax.plot(states_gt[:, map_link(i,N), 0], states_gt[:, map_link(i,N), 1], states_gt[:, map_link(i,N), 2], label=f'Ground Truth {map_link_mujoco(i,N)}')
-
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    for i, color in zip(reversed(links), color_cycle):
+        ax.plot(states_gt[:, map_link(i,N), 0], states_gt[:, map_link(i,N), 1], states_gt[:, map_link(i,N), 2], label=f'Ground Truth {map_link_mujoco(i,N)}', linestyle='--', color=color, linewidth=0.5)
+        ax.plot(states[:, map_link(i,N), 0], states[:, map_link(i,N), 1], states[:, map_link(i,N), 2], label=f'Prediction {map_link_mujoco(i,N)}', color=color)
+    
+    ax.title.set_text('Position Rollout') 
+    ax.grid(False)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_zlabel('$z$')
@@ -89,29 +92,36 @@ def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
     return fig
 
 def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
-    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    fig, ax = plt.subplots(1, 3, figsize=(12,4))
 
     states = states.detach().cpu().numpy()
     states_gt = states_gt.detach().cpu().numpy()
     N = states.shape[1]
 
-    for i in links:
-        ax[0].plot(states[:, map_link(i,N), 3], label=f'Prediction $v_x{map_link_mujoco(i,N)}$')
-        ax[0].plot(states_gt[:, map_link(i,N), 3], label=f'Ground Truth $v_x{map_link_mujoco(i,N)}$')
-        ax[1].plot(states[:, map_link(i,N), 4], label=f'Prediction $v_y{map_link_mujoco(i,N)}$')
-        ax[1].plot(states_gt[:, map_link(i,N), 4], label=f'Ground Truth $v_y{map_link_mujoco(i,N)}$')
-        ax[2].plot(states[:, map_link(i,N), 5], label=f'Prediction $v_z{map_link_mujoco(i,N)}$')
-        ax[2].plot(states_gt[:, map_link(i,N), 5], label=f'Ground Truth $v_z{map_link_mujoco(i,N)}$')
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    for i, color in zip(reversed(links), color_cycle):
+        ax[0].plot(states[:, map_link(i,N), 3], label=f'Prediction $v_x^{{{map_link_mujoco(i,N)}}}$')
+        ax[0].plot(states_gt[:, map_link(i,N), 3], label=f'Ground Truth $v_x^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+        ax[1].plot(states[:, map_link(i,N), 4], label=f'Prediction $v_y^{{{map_link_mujoco(i,N)}}}$', color=color)
+        ax[1].plot(states_gt[:, map_link(i,N), 4], label=f'Ground Truth $v_y^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+        ax[2].plot(states[:, map_link(i,N), 5], label=f'Prediction $v_z^{{{map_link_mujoco(i,N)}}}$', color=color)
+        ax[2].plot(states_gt[:, map_link(i,N), 5], label=f'Ground Truth $v_z^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+    
+    ax[0].set_title('$x$-Velocity Rollout')
+    ax[0].set_xlabel('Time Step $k$')
+    ax[0].set_ylabel('Velocity $v_x$')
+    ax[1].set_title('$y$-Velocity Rollout')
+    ax[1].set_xlabel('Time Step $k$')
+    ax[1].set_ylabel('Velocity $v_y$')
+    ax[2].set_title('$z$-Velocity Rollout')
+    ax[2].set_xlabel('Time Step $k$')
+    ax[2].set_ylabel('Velocity $v_z$')
+    fig.subplots_adjust(bottom=0.25)
 
-    ax[0].set_xlabel('Time')
-    ax[0].set_ylabel('Velocity $x$')
-    ax[0].legend()
-    ax[1].set_xlabel('Time')
-    ax[1].set_ylabel('Velocity $y$')
-    ax[1].legend()
-    ax[2].set_xlabel('Time')
-    ax[2].set_ylabel('Velocity $z$')
-    ax[2].legend()
+    # Place legends at the bottom
+    ax[0].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    ax[1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    ax[2].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
 
     return fig
 
@@ -123,8 +133,10 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     fig_velocities = plot_velocities(states, gt_states, links=[1, 10, 20, 30])
     
     if save_figures:
-        fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.png")
-        fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.png")
+        fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.svg")
+        fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.pdf")
+        fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.svg")
+        fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.pdf")
 
     wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 

@@ -1647,6 +1647,18 @@ wheels = [
 ]
 
 [[package]]
+name = "scienceplots"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5e/04/aff33daa212cf6dd5427999062aab0289976dd1b0b842752e81ab17aef66/SciencePlots-2.1.1.tar.gz", hash = "sha256:d8d197e3410f87ebdad0b9c265eaab596094fb082d97123e835f6bc32800ab54", size = 10757 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/2a/debffdd7061c7a65ab46c51e671b895dc8231c4a14950849c40699eb2070/SciencePlots-2.1.1-py3-none-any.whl", hash = "sha256:2e64d2e93b4f98702f30145dbb70d238f5dc315e227fec331489631232dfc9e0", size = 16472 },
+]
+
+[[package]]
 name = "scipy"
 version = "1.15.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1893,6 +1905,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "jax", extra = ["cuda12"] },
+    { name = "scienceplots" },
     { name = "torch" },
     { name = "torch-geometric" },
     { name = "tqdm" },
@@ -1910,6 +1923,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "jax", extras = ["cuda12"], specifier = ">=0.5.2" },
+    { name = "scienceplots", specifier = ">=2.1.1" },
     { name = "torch", specifier = ">=2.6.0" },
     { name = "torch-geometric", specifier = ">=2.6.1" },
     { name = "tqdm", specifier = ">=4.67.1" },
