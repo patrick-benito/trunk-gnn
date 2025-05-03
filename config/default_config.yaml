@@ -30,7 +30,7 @@ shuffle: True  # Whether to shuffle the training data
 seed: 0  # Random seed for reproducibility
 
 # Other
-log_metrics: True  # Whether to log metrics
+log_metrics: False  # Whether to log metrics
 
 # MLP
 mlp_num_hidden_layers: 4  # Number of hidden layers in the MLP
