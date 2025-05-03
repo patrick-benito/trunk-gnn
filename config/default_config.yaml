@@ -1,5 +1,5 @@
 # Model configuration
-model: 'mlp'  # Model type to use ('gnn' or 'mlp')
+model: 'gnn'  # Model type to use ('gnn' or 'mlp')
 edge_num_hidden_layers: 4  # Number of hidden layers in the edge MLP
 edge_hidden_features: 150  # Number of hidden features in the edge MLP
 edge_channels_out: 10  # Number of output channels in the edge MLP
