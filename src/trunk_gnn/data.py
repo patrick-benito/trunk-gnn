@@ -114,7 +114,7 @@ class TrunkGraphDataset(InMemoryDataset):
                 raise ValueError("Link step should be an integer.")
             
             self.num_links = len(self.links)
-                                
+                      
             self.state_cols, self.state_new_cols, self.control_cols = get_column_names(
                 self.num_segments, "pos_vel", self.links
             )
@@ -137,6 +137,7 @@ class TrunkGraphDataset(InMemoryDataset):
                 ids = torch.tensor(ids, dtype=torch.float32).reshape(self.num_links, -1)
 
                 if idx == 0:
+                    # This is only valid in sim
                     if torch.allclose(x[:, 0], torch.zeros_like(x[:, 0])) and torch.allclose(x[:, 1], torch.zeros_like(x[:, 1])):
                         print("Resting state of links is as expected.")
                         assert torch.allclose(x[:, 2], torch.tensor([-0.0106666666666666 * i for i in range(1, self.num_links+1)])), f"Resting state of links is not as expected."

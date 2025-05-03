@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[TrunkGraphDataset]:
     datasets = []
 
-    folders = os.listdir(test_data_folder)
+    folders = [f for f in os.listdir(test_data_folder) if os.path.isdir(os.path.join(test_data_folder, f))]
 
     if "raw" in folders:
         folders = ["."]

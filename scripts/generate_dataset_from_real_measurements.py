@@ -12,9 +12,31 @@ def create_dataframe_from_folder(folder):
 
     return data
 
+input_mapping_from_real_to_sim = {
+    "u2": "ux3",
+    "u4": "uy3",
+    "u6": "ux2",
+    "u1": "uy2",
+    "u3": "ux1",
+    "u5": "uy1",
+}
+
+
+def rename_columns(data):
+    data.rename(columns={col: input_mapping_from_real_to_sim[col] for col in data.columns if col.startswith("u")}, inplace=True)
+    
+    data.rename(columns={
+        col: "z" + col[1:] if col.startswith("y") else
+            "y" + col[1:] if col.startswith("z") else col
+        for col in data.columns
+    }, inplace=True)
+
+    return data
+
 def process_data(data):
     # remove columns that are not needed
     data['t'] = data['ID'] * 0.01
+    data = rename_columns(data)
     data = data.drop(columns=[col for col in data.columns if not col.startswith(("t", "x", "y", "z", "u"))])
 
     # compute velocity
@@ -24,14 +46,16 @@ def process_data(data):
 
     # compute new states
     for col in data.columns:
-        data[f'{col}_new'] = data[col].shift(-1)
+        if col.startswith(("x", "y", "z", "v")):
+            data[f'{col}_new'] = data[col].shift(-1)
 
-    data = data.iloc[:-1] # remove last row
-    data.dropna()
+    data = data.iloc[1:-1] # remove last row
 
     # remove idle states
-    data = data[data['u1'] != 0] 
+    data = data[(data['ux1'] != 0) | (data['ux2'] != 0) | (data['ux3'] != 0) | (data['uy1'] != 0) | (data['uy2'] != 0) | (data['uy3'] != 0)]
 
+    data.dropna()
+    
     return data
 
 def split_test_data(data):
@@ -45,6 +69,7 @@ def split_test_data(data):
             if row['u1'] == 0 and row['u2'] == 0 and row['u3'] == 0 and row['u4'] == 0 and row['u5'] == 0 and row['u6'] == 0:
                 new_data = pd.DataFrame(current_segment)
                 new_data = new_data[(new_data['u1'] != 0) | (new_data['u2'] != 0) | (new_data['u3'] != 0) | (new_data['u4'] != 0) | (new_data['u5'] != 0) | (new_data['u6'] != 0)]
+                new_data = new_data.iloc[:500] # keep only 500 rows as in sim datasets
                 segments.append(new_data)
 
                 print(f"Segment #{num_test_files} with {len(segments[-1])} rows")
