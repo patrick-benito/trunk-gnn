@@ -17,8 +17,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     "black>=25.1.0",
+    "cvxpy>=1.6.5",
+    "findiff>=0.12.1",
     "ipykernel>=6.29.5",
+    "osqp>=1.0.3",
+    "plotly>=6.0.1",
+    "pyomo>=6.9.2",
     "pytest>=8.3.5",
+    "scikit-learn>=1.6.1",
+    "ssmlearnpy",
 ]
 
 [tool.pytest.ini_options]
@@ -30,6 +37,7 @@ package = true
 
 [tool.uv.sources]
 trunk-sim = { path = "../trunk-sim" }
+ssmlearnpy = { git = "https://github.com/mattiacenedese/SSMLearnPy.git", rev = "f538aabcf7b3afb3dc3d736e035241da485a0724" }
 
 [tool.uv.sources.config]
 path = "config.yaml"

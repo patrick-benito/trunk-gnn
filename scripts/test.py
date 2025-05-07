@@ -4,10 +4,15 @@ import torch
 from trunk_gnn.model import TrunkGNN, TrunkMLP
 from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder, load_model
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import sys
+sys.path.append('./opt_ssm')
+from ssm_torch_model import SSMModel
+model = SSMModel(model_type="opt_ssm/ssmr_orth")
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 def main(args):
-    model = load_model(TrunkGNN, args.artifacts_folder, args.artifact_name)
+    #model = load_model(TrunkMLP, args.artifacts_folder, args.artifact_name)
     
     with torch.no_grad():
         open_loop_test_all(model, load_data_sets_from_folder(args.test_dataset_folder), save_figures=True)

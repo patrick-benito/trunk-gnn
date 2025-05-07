@@ -16,6 +16,7 @@ map_link = lambda link, n_links: min(max(round(link/30*n_links) - 1, 0), n_links
 map_link_mujoco = lambda link, n_links: round((map_link(link,n_links)+1) / n_links * 30)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[TrunkGraphDataset]:
     datasets = []
@@ -39,6 +40,8 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torc
         start_index = 0
 
         model.eval()
+        model.reset()
+
         state = ground_truth[start_index].clone()
         state.x_new = None # Not used in rollout
 
@@ -82,6 +85,7 @@ def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
         ax.plot(states_gt[:, map_link(i,N), 0], states_gt[:, map_link(i,N), 1], states_gt[:, map_link(i,N), 2], label=f'Ground Truth {map_link_mujoco(i,N)}', linestyle='--', color=color, linewidth=0.5)
         ax.plot(states[:, map_link(i,N), 0], states[:, map_link(i,N), 1], states[:, map_link(i,N), 2], label=f'Prediction {map_link_mujoco(i,N)}', color=color)
     
+    ax.scatter(0, 0, 0, color='black', marker='o', s=0.001)
     ax.title.set_text('Position Rollout') 
     ax.grid(False)
     ax.set_xlabel('$x$')
@@ -129,8 +133,8 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
     states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
-    fig_positions = plot_rollout(states, gt_states, links=[1, 10, 20, 30])
-    fig_velocities = plot_velocities(states, gt_states, links=[1, 10, 20, 30])
+    fig_positions = plot_rollout(states, gt_states, links=[30])
+    fig_velocities = plot_velocities(states, gt_states, links=[30])
     
     if save_figures:
         fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.svg")
@@ -138,7 +142,7 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.svg")
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.pdf")
 
-    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
+    #wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 
     plt.close(fig_positions)
     plt.close(fig_velocities)
@@ -157,7 +161,7 @@ def open_loop_test_all(model: torch.nn.Module, test_datasets: List[TrunkGraphDat
 
     avg_open_loop_rmse /= len(test_datasets)
     
-    wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
+    #wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse
 
 

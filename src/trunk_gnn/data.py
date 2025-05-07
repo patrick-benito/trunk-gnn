@@ -110,6 +110,7 @@ class TrunkGraphDataset(InMemoryDataset):
 
             if isinstance(self.link_step, int):
                 self.links = list(range(num_links_mujoco, 0, -self.link_step))[::-1] # Ensures that endeffector is always included
+                print("Links:", self.links)
             else:
                 raise ValueError("Link step should be an integer.")
             
