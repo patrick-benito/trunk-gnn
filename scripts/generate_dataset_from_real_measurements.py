@@ -13,17 +13,17 @@ def create_dataframe_from_folder(folder):
     return data
 
 input_mapping_from_real_to_sim = {
-    "u2": "ux3",
-    "u4": "uy3",
-    "u6": "ux2",
-    "u1": "uy2",
-    "u3": "ux1",
-    "u5": "uy1",
+    "phi2": "ux3",
+    "phi4": "uy3",
+    "phi6": "ux2",
+    "phi1": "uy2",
+    "phi3": "ux1",
+    "phi5": "uy1",
 }
 
 
 def rename_columns(data):
-    data.rename(columns={col: input_mapping_from_real_to_sim[col] for col in data.columns if col.startswith("u")}, inplace=True)
+    data.rename(columns={col: input_mapping_from_real_to_sim[col] for col in data.columns if col.startswith("phi")}, inplace=True)
     
     data.rename(columns={
         col: "z" + col[1:] if col.startswith("y") else
@@ -37,7 +37,6 @@ def process_data(data):
     # remove columns that are not needed
     data['t'] = data['ID'] * 0.01
     data = rename_columns(data)
-    data = data.drop(columns=[col for col in data.columns if not col.startswith(("t", "x", "y", "z", "u"))])
 
     # compute velocity
     for col in data.columns:
@@ -49,10 +48,11 @@ def process_data(data):
         if col.startswith(("x", "y", "z", "v")):
             data[f'{col}_new'] = data[col].shift(-1)
 
-    data = data.iloc[1:-1] # remove last row
+    data = data.iloc[1:-1] # remove first and last row
+    data = data[(data['u1'] != 0) | (data['u2'] != 0) | (data['u3'] != 0) | (data['u4'] != 0) | (data['u5'] != 0) | (data['u6'] != 0)]
+    data = data.drop(columns=[col for col in data.columns if not col.startswith(("t", "x", "y", "z", "u", "v"))])
 
     # remove idle states
-    data = data[(data['ux1'] != 0) | (data['ux2'] != 0) | (data['ux3'] != 0) | (data['uy1'] != 0) | (data['uy2'] != 0) | (data['uy3'] != 0)]
 
     data.dropna()
     
@@ -86,7 +86,7 @@ def split_test_data(data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate dataset from real measurements")
     parser.add_argument("--folder", type=str, default="data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs", help="Folder containing the data")
-    parser.add_argument("--type", type=str, default="test", help="Data type (train, test)")
+    parser.add_argument("--type", type=str, default="train", help="Data type (train, test)")
     args = parser.parse_args()
 
     folder = os.path.join(args.folder, args.type)
