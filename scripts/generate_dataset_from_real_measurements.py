@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import re
 import argparse
 from tqdm import tqdm
 
@@ -22,6 +23,28 @@ input_mapping_from_real_to_sim = {
 }
 
 
+def add_virtual_node_at_origin(df):
+    def increment_number_in_string(s):
+        if not re.search(r'\d+', s):
+            return s  # Return unchanged if no number is found
+        return re.sub(r'\d+', lambda m: str(int(m.group()) + 1), s, count=1)
+    
+    # Function must be applied to raw dataset
+    for col in sorted(df.columns, key=lambda x: int(re.search(r'\d+', x).group()) if re.search(r'\d+', x) else float('inf'), reverse=True):
+        if col.startswith(("x", "y", "z", "v", "q", "w")):
+            new_col = increment_number_in_string(col)
+            df[new_col] = df[col]
+            df.drop(columns=[col], inplace=True)
+    
+    for col in ["z1", "vx1", "vy1", "vz1", "qx1", "qy1", "qz1", "w1"]:
+        df[col] = 0
+    
+    df['x1'] = 0.1
+    df['y1'] = 0.1
+
+    return df
+            
+
 def rename_columns(data):
     data.rename(columns={col: input_mapping_from_real_to_sim[col] for col in data.columns if col.startswith("phi")}, inplace=True)
     
@@ -34,6 +57,7 @@ def rename_columns(data):
     return data
 
 def process_data(data):
+    data = add_virtual_node_at_origin(data)
     # remove columns that are not needed
     data['t'] = data['ID'] * 0.01
     data = rename_columns(data)
@@ -55,6 +79,9 @@ def process_data(data):
     # remove idle states
 
     data.dropna()
+
+    # Sort columns alphabetically
+    data = data[sorted(data.columns)]
     
     return data
 
