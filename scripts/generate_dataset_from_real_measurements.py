@@ -36,11 +36,11 @@ def add_virtual_node_at_origin(df):
             df[new_col] = df[col]
             df.drop(columns=[col], inplace=True)
     
-    for col in ["z1", "vx1", "vy1", "vz1", "qx1", "qy1", "qz1", "w1"]:
+    for col in ["y1", "vx1", "vy1", "vz1", "qx1", "qy1", "qz1", "w1"]:
         df[col] = 0
     
     df['x1'] = 0.1
-    df['y1'] = 0.1
+    df['z1'] = 0.1 # Will be swapped with y1 later
 
     return df
             
