@@ -141,8 +141,8 @@ class TrunkGraphDataset(InMemoryDataset):
                     # This is only valid in sim
                     if torch.allclose(x[:, 0], torch.zeros_like(x[:, 0])) and torch.allclose(x[:, 1], torch.zeros_like(x[:, 1])):
                         print("Resting state of links is as expected.")
-                        assert torch.allclose(x[:, 2], torch.tensor([-0.0106666666666666 * i for i in range(1, self.num_links+1)])), f"Resting state of links is not as expected."
-                    
+                        assert torch.allclose(x[:, 2], torch.tensor([-0.0106666666666666 * i for i in range(1, self.num_links+1)])), f"Resting state of links is not as expected. Expected: {[-0.0106666666666666 * i for i in range(1, self.num_links+1)]}, got: {x[:, 2]}"
+                        
                 data_list.append(Data(t=t, x=x, u=u, x_new=x_new, edge_index=edge_index, ids=ids))
 
         self.save(data_list, self.processed_paths[0])
