@@ -6,6 +6,6 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs']
+    values: ['data/mass_500g_harmonic_ssm']
   node_hidden_features:
     values: [50]

@@ -26,7 +26,7 @@ def main():
     sweep_config = load_config("config/sweep_config.yaml")
     is_iris = platform.node() == "iris"
     local = "" if is_iris else "local-"
-    project_name = f"{local}trunk-{sweep_config['parameters']['model']['values'][0]}-0.2.0-sweep"
+    project_name = f"{local}trunk-{sweep_config['parameters']['model']['values'][0]}-0.2.1-sweep"
     
     if is_iris:
         commit_message = os.popen('git log -1 --pretty=%B').read().strip()
