@@ -6,7 +6,7 @@ parameters:
   model:
     values: ['mlp']
   dataset_folder:
-    values: ['data/mass_500g_harmonic_ssm']
+    values: ['data/mass_500g_harmonic']
   node_hidden_features:
     values: [50]
   shuffle:
