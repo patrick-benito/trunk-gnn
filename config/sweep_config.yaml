@@ -6,6 +6,6 @@ parameters:
   model:
     values: ['mlp']
   dataset_folder:
-    values: ['data/mass_500g_harmonic']
+    values: ['data/mass_500g_harmonic_ssm']
   node_hidden_features:
     values: [50]
