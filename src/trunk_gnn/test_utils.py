@@ -33,10 +33,9 @@ def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[Tru
 
     return datasets
 
-def test_rollout(model: torch.nn.Module, ground_truth: list[Data]) -> tuple[torch.Tensor, torch.Tensor]:
+def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index = 0) -> tuple[torch.Tensor, torch.Tensor]:
     with torch.no_grad():
         start_time = time.time()
-        start_index = 0
 
         model.eval()
         state = ground_truth[start_index].clone()
@@ -68,6 +67,14 @@ def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) ->
     target_states_gt = states_gt[:, mapped, :]
 
     return torch.sqrt(torch.mean((target_states - target_states_gt) ** 2))
+
+def open_loop_link_se(states: torch.Tensor, states_gt: torch.Tensor, links) -> torch.Tensor:
+    N = states.shape[1]
+    mapped = [map_link(link, N) for link in links]
+    target_states = states[:, mapped, :]
+    target_states_gt = states_gt[:, mapped, :]
+    return torch.sum(torch.mean((target_states - target_states_gt) ** 2, axis=2), axis=0)
+
 
 def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
     fig = plt.figure(figsize=(5,5))
@@ -127,8 +134,12 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
-    states, gt_states, delta_time = test_rollout(model, list(test_data_loader))
+    states, gt_states, delta_time = test_rollout(model, list(test_data_loader), start_index=400)
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
+    se = open_loop_link_se(states, gt_states, links = [30])
+
+    print(f"Open loop test RMSE m: {rmse.item()}")
+    print(f"Open loop test ISE cm**2 s: {se.item()*0.01*100*100}")
     fig_positions = plot_rollout(states, gt_states, links=[1, 10, 20, 30])
     fig_velocities = plot_velocities(states, gt_states, links=[1, 10, 20, 30])
     
@@ -138,7 +149,8 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.svg")
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.pdf")
 
-    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"open_loop_rmse_{additonal_info}": rmse.item(), f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
+    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"tip_open_loop_rmse_{additonal_info}": rmse.item(), f"tip_open_loop_se_{additonal_info}": se.item(), f"tip_open_loop_ise_{additonal_info}": se.item()*0.01,
+               f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
 
     plt.close(fig_positions)
     plt.close(fig_velocities)
@@ -157,7 +169,7 @@ def open_loop_test_all(model: torch.nn.Module, test_datasets: List[TrunkGraphDat
 
     avg_open_loop_rmse /= len(test_datasets)
     
-    wandb.log({"avg_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
+    wandb.log({"avg_tip_open_loop_rmse": avg_open_loop_rmse.item()}, commit=False)
     return avg_open_loop_rmse
 
 
@@ -172,7 +184,7 @@ def load_model(model_type, artifacts_folder = "./artifacts/", artifact_name = No
         download_artifacts(artifact_name)
 
     model_data = torch.load(os.path.join(artifacts_folder, "model_data.pth"))
-    wandb.init(mode="disabled", config=setup_config(model_data['config']))
+    wandb.init(config=setup_config(model_data['config']))
     print(f"Initialized wandb with config: {wandb.config}")
 
     model = model_type()
