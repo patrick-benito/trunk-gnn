@@ -5,9 +5,9 @@ from trunk_gnn.model import TrunkGNN, TrunkMLP
 from trunk_gnn.test_utils import open_loop_test_all, load_data_sets_from_folder, load_model
 
 import sys
-sys.path.append('./opt_ssm')
-from ssm_torch_model import SSMModel
-model = SSMModel(model_type="opt_ssm/ssmr_orth")
+sys.path.append('./opt_ssm/examples/')
+from opt_ssm_model.ssm_torch_model import SSMModel
+model = SSMModel(model_type="ssmr_orth")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
