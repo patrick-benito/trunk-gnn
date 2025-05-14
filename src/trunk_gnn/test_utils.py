@@ -41,6 +41,11 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index =
         model.eval()
         model.reset()
 
+        if start_index == 0:
+            model.init_x0([ground_truth[start_index].clone() for _ in range(4)])
+        else:
+            model.init_x0([ground_truth[idx+1].clone() for idx in range(start_index-4,start_index)])
+
         state = ground_truth[start_index].clone()
         state.x_new = None # Not used in rollout
 
@@ -66,16 +71,16 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index =
 def open_loop_link_rmse(states: torch.Tensor, states_gt: torch.Tensor, links) -> torch.Tensor:
     N = states.shape[1]
     mapped = [map_link(link, N) for link in links]
-    target_states = states[:, mapped, :]
-    target_states_gt = states_gt[:, mapped, :]
+    target_states = states[:, mapped, :3]
+    target_states_gt = states_gt[:, mapped, :3]
 
     return torch.sqrt(torch.mean((target_states - target_states_gt) ** 2))
 
 def open_loop_link_se(states: torch.Tensor, states_gt: torch.Tensor, links) -> torch.Tensor:
     N = states.shape[1]
     mapped = [map_link(link, N) for link in links]
-    target_states = states[:, mapped, :]
-    target_states_gt = states_gt[:, mapped, :]
+    target_states = states[:, mapped, :3]
+    target_states_gt = states_gt[:, mapped, :3]
     return torch.sum(torch.mean((target_states - target_states_gt) ** 2, axis=2), axis=0)
 
 
