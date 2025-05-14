@@ -201,3 +201,13 @@ def load_model(model_type, artifacts_folder = "./artifacts/", artifact_name = No
     model.to(device)
 
     return model
+
+def load_ssm_model(artifacts_folder = "./artifacts/", artifact_name = None):
+    wandb.init()
+    import sys
+    sys.path.append('./opt_ssm_model')
+
+    from ssm_torch_model import SSMModel
+    model = SSMModel(model_type="ssmr_orth")
+
+    return model
