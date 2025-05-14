@@ -8,7 +8,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
 def main(args):
-    model = load_ssm_model()
+    model = load_ssm_model("ssmr_opt")
 
     with torch.no_grad():
         open_loop_test_all(model, load_data_sets_from_folder(args.test_dataset_folder), save_figures=True)
