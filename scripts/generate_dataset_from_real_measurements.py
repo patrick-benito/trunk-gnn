@@ -6,7 +6,9 @@ import argparse
 from tqdm import tqdm
 
 from trunk_filter.composite_filter import NonCausalTrunkFilter
-from trunk_filter.utils import integrate_positions_from_velocity, get_data_array_from_dataframe, get_dataframe_from_data_array
+from trunk_filter.utils import (
+    integrate_positions_from_velocity, get_data_array_from_dataframe, get_dataframe_from_data_array, get_input_array_from_dataframe, get_dataframe_from_input_array
+)
 
 
 input_mapping_from_real_to_sim = {
@@ -94,10 +96,13 @@ def rename_columns(data):
 
 def filter_data(df):
     filter_func = NonCausalTrunkFilter(num_nodes=4, measurement_noise=1e-1, position_process_noise=0, velocity_process_noise=1e1)
-    real_data_array = get_data_array_from_dataframe(df)[:, :, 0::2]
+    real_data_array = get_data_array_from_dataframe(df)[:, :, 0::2] #TODO: not clean to slice here
     filtered_data = integrate_positions_from_velocity(real_data_array, filter_func.update_from_array(real_data_array))
     return get_dataframe_from_data_array(filtered_data, join_with=df)
 
+def filter_inputs(df):
+    filter_func = NonCausalTrunkFilter(num_nodes=3, dim_x=4, dim_z=2, measurement_noise=1e-1, position_process_noise=0, velocity_process_noise=1e1)
+    return get_dataframe_from_input_array(filter_func.update_from_array(get_input_array_from_dataframe(df))[:,:,0::2], join_with=df)
 
 def process_data(data, args=None):
     # Reset indexes of data
@@ -108,8 +113,9 @@ def process_data(data, args=None):
         if col.startswith(("x", "y", "z")):
             data[f"v{col}"] = data[col].diff() / 0.01 # use filter insteads
     
-    if args.filter_data:
-        data = filter_data(data)
+    # Filter data and inputs
+    data = filter_data(data)
+    data = filter_inputs(data)
 
     # compute new states
     for col in data.columns:
@@ -130,7 +136,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate dataset from real measurements")
     parser.add_argument("--folder", type=str, default="data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs", help="Folder containing the data")
     parser.add_argument("--type", type=str, default="train", help="Data type (train, test)")
-    parser.add_argument("--filter-data", action="store_true", help="Whether to filter the data or not")
     args = parser.parse_args()
 
     folder = os.path.join(args.folder, args.type)
