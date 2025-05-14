@@ -10,6 +10,7 @@ dependencies = [
     "torch>=2.6.0",
     "torch-geometric>=2.6.1",
     "tqdm>=4.67.1",
+    "trunk-filter",
     "trunk-sim",
     "wandb>=0.19.7",
 ]
@@ -30,6 +31,7 @@ package = true
 
 [tool.uv.sources]
 trunk-sim = { path = "../trunk-sim" }
+trunk-filter = { path = "../trunk-filter" }
 
 [tool.uv.sources.config]
 path = "config.yaml"
