@@ -8,7 +8,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
 def main(args):
-    model = load_ssm_model("ssmr_opt")
+    if args.model_type == "gnn":
+         model = load_model(TrunkGNN, args.artifacts_folder, args.artifact_name)
+    elif args.model_type == "mlp":
+        model = load_model(TrunkMLP, args.artifacts_folder, args.artifact_name)
+    elif args.model_type == "ssmr_opt":
+        model = load_ssm_model("ssmr_opt")
+    elif args.model_type == "ssmr_orth":
+        model = load_ssm_model("ssmr_orth")
 
     with torch.no_grad():
         open_loop_test_all(model, load_data_sets_from_folder(args.test_dataset_folder), save_figures=True)
@@ -23,6 +30,13 @@ def get_args():
         help="Path of the testing dataset folders"
     )
     parser.add_argument("--artifact_name", type=str, default=None, help="Artifact name to download from wandb.")
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        choices=["gnn", "mlp", "ssmr_opt", "ssmr_orth"],
+        help="Model type to use for testing.",
+        required=True,
+    )
 
     return parser.parse_args()
 

@@ -12,6 +12,11 @@ from trunk_gnn.plotting import plt
 
 from trunk_gnn.train_utils import setup_config
 
+import sys
+sys.path.append('./opt_ssm_model')
+
+from ssm_torch_model import SSMModel
+
 map_link = lambda link, n_links: min(max(round(link/30*n_links) - 1, 0), n_links-1)
 map_link_mujoco = lambda link, n_links: round((map_link(link,n_links)+1) / n_links * 30)
 
@@ -34,7 +39,7 @@ def load_data_sets_from_folder(test_data_folder: str, link_step = 1) -> List[Tru
 
     return datasets
 
-def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index = 0) -> tuple[torch.Tensor, torch.Tensor]:
+def test_rollout_ssm(model: torch.nn.Module, ground_truth: list[Data], start_index = 0) -> tuple[torch.Tensor, torch.Tensor]:
     with torch.no_grad():
         start_time = time.time()
 
@@ -46,6 +51,33 @@ def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index =
         else:
             model.init_x0([ground_truth[idx+1].clone() for idx in range(start_index-4,start_index)])
 
+        state = ground_truth[start_index].clone()
+        state.x_new = None # Not used in rollout
+
+        state_list = []
+        state_list_gt = []
+
+        for i in range(start_index,len(ground_truth)):
+            gt = ground_truth[i]
+            state_list.append(state.x.detach())
+            state_list_gt.append(gt.x)
+            
+            state.t, state.u = gt.t, gt.u
+            x_new = model(state).x_new
+            state.x = x_new
+
+        state_list = torch.stack(state_list)
+        state_list_gt = torch.stack(state_list_gt)
+
+        delta_time = time.time() - start_time
+
+        return state_list, state_list_gt, delta_time
+
+def test_rollout(model: torch.nn.Module, ground_truth: list[Data], start_index = 0) -> tuple[torch.Tensor, torch.Tensor]:
+    with torch.no_grad():
+        start_time = time.time()
+
+        model.eval()
         state = ground_truth[start_index].clone()
         state.x_new = None # Not used in rollout
 
@@ -143,7 +175,13 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
-    states, gt_states, delta_time = test_rollout(model, list(test_data_loader), start_index=400)
+    start_index = 400
+    
+    if isinstance(model, SSMModel):
+        states, gt_states, delta_time = test_rollout_ssm(model, list(test_data_loader), start_index=start_index)
+    else:
+        states, gt_states, delta_time = test_rollout(model, list(test_data_loader), start_index=start_index)
+
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
     se = open_loop_link_se(states, gt_states, links = [30])
 
@@ -203,11 +241,7 @@ def load_model(model_type, artifacts_folder = "./artifacts/", artifact_name = No
     return model
 
 def load_ssm_model(model_type):
-    wandb.init()
-    import sys
-    sys.path.append('./opt_ssm_model')
-
-    from ssm_torch_model import SSMModel
+    wandb.init(config={"model_type": model_type})
     model = SSMModel(model_type=model_type)
 
     return model
