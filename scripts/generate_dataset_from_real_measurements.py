@@ -21,13 +21,13 @@ input_mapping_from_real_to_sim = {
 }
 
 
-def create_dataframe_from_folder(folder):
+def create_dataframe_from_folder(folder, dt=0.01):
     states = pd.read_csv(os.path.join(folder, "states.csv"))
     inputs = pd.read_csv(os.path.join(folder, "inputs.csv"))
 
     data = pd.merge(states, inputs, on="ID")
     data = add_virtual_node_at_origin(data)
-    data['t'] = data['ID'] * 0.01
+    data['t'] = data['ID'] * dt
     data = rename_columns(data)
 
     return data
@@ -113,9 +113,10 @@ def process_data(data, args=None):
         if col.startswith(("x", "y", "z")):
             data[f"v{col}"] = data[col].diff() / 0.01 # use filter insteads
     
-    # Filter data and inputs
-    data = filter_data(data)
-    data = filter_inputs(data)
+    if args.no_filter is False:
+        # Filter data and inputs
+        data = filter_data(data)
+        data = filter_inputs(data)
 
     # compute new states
     for col in data.columns:
@@ -136,6 +137,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate dataset from real measurements")
     parser.add_argument("--folder", type=str, default="data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs", help="Folder containing the data")
     parser.add_argument("--type", type=str, default="train", help="Data type (train, test)")
+    parser.add_argument("--no-filter", action="store_true", help="Do not filter data")
     args = parser.parse_args()
 
     folder = os.path.join(args.folder, args.type)
