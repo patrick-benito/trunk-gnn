@@ -160,7 +160,7 @@ class TrunkGNN(nn.Module):
         self.layers = nn.ModuleList()
         self.num_links = 30
         self.num_blocks = 1
-        self.dt = 0.01
+        self.dt = wandb.config["dt"]
         self.link_delta_z_pos = -0.0106666666666666 # TODO: this is bad for edge mlp
         # compute the resting state of the links as [0,0,link_delta_z_pos * i,0,0,0] for i in (1,2,3,...,30). We incude 0 so that index matches the link number
         self.x_rest = torch.kron(torch.tensor([[0, 0, self.link_delta_z_pos, 0, 0, 0]]), torch.tensor(range(0, self.num_links+1)).reshape(-1,1)).to(self.device)
@@ -226,7 +226,7 @@ class TrunkMLP(nn.Module):
             self.in_features += 6
         self.out_features = 3*self.num_links
         self.model = MLP(self.in_features, self.out_features, num_hidden_layers=wandb.config['mlp_num_hidden_layers'], hidden_features=wandb.config['mlp_hidden_features'])
-        self.dt = 0.01
+        self.dt = wandb.config["dt"]
 
     def forward(self, _data: Data):
         data = _data.clone()

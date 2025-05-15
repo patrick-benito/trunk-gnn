@@ -182,7 +182,7 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.svg")
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.pdf")
 
-    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"tip_open_loop_rmse_{additonal_info}": rmse.item(), f"tip_open_loop_se_{additonal_info}": se.item(), f"tip_open_loop_ise_{additonal_info}": se.item()*0.01}, commit=False)
+    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"tip_open_loop_rmse_{additonal_info}": rmse.item(), f"tip_open_loop_se_{additonal_info}": se.item()}, commit=False)
     wandb.log({f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
     wandb.log({f"open_loop_rollout_fig_positions_1d_{additonal_info}": wandb.Image(fig_positions_1d)}, commit=False)
 

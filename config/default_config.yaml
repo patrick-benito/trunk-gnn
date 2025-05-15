@@ -31,6 +31,7 @@ seed: 0  # Random seed for reproducibility
 
 # Other
 log_metrics: False  # Whether to log metrics
+dt: 0.01  # Time step for the simulation [s]
 
 # MLP
 mlp_num_hidden_layers: 4  # Number of hidden layers in the MLP
