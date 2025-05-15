@@ -47,8 +47,10 @@ def train(
             gradient_clipping_max_norm=wandb.config["gradient_clipping_max_norm"],
         )
 
-        if i % 100 == 0:
+        if i % 10 == 0:
             open_loop_test_all(model, open_loop_test_data_sets)
+        
+    open_loop_test_all(model, open_loop_test_data_sets)
 
 def main():
     print(f"Initialized wandb with config: {wandb.config}")
