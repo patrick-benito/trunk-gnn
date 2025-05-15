@@ -139,6 +139,40 @@ def plot_rollout(states: torch.Tensor, states_gt: torch.Tensor, links):
 
     return fig
 
+def plot_positions_1d(states: torch.Tensor, states_gt: torch.Tensor, links):
+    fig, ax = plt.subplots(1, 3, figsize=(12,4))
+
+    states = states.detach().cpu().numpy()
+    states_gt = states_gt.detach().cpu().numpy()
+    N = states.shape[1]
+
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    for i, color in zip(reversed(links), color_cycle):
+        ax[0].plot(states[:, map_link(i,N), 0], label=f'Prediction $x^{{{map_link_mujoco(i,N)}}}$')
+        ax[0].plot(states_gt[:, map_link(i,N), 0], label=f'Ground Truth $x^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+        ax[1].plot(states[:, map_link(i,N), 1], label=f'Prediction $y^{{{map_link_mujoco(i,N)}}}$', color=color)
+        ax[1].plot(states_gt[:, map_link(i,N), 1], label=f'Ground Truth $y^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+        ax[2].plot(states[:, map_link(i,N), 2], label=f'Prediction $z^{{{map_link_mujoco(i,N)}}}$', color=color)
+        ax[2].plot(states_gt[:, map_link(i,N), 2], label=f'Ground Truth $z^{{{map_link_mujoco(i,N)}}}$', linestyle='--', color=color)
+    
+    ax[0].set_title('$x$-Position Rollout')
+    ax[0].set_xlabel('Time Step $k$')
+    ax[0].set_ylabel('Position $v_x$')
+    ax[1].set_title('$y$-Position Rollout')
+    ax[1].set_xlabel('Time Step $k$')
+    ax[1].set_ylabel('Position $v_y$')
+    ax[2].set_title('$z$-Position Rollout')
+    ax[2].set_xlabel('Time Step $k$')
+    ax[2].set_ylabel('Position $v_z$')
+    fig.subplots_adjust(bottom=0.25)
+
+    # Place legends at the bottom
+    ax[0].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    ax[1].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
+    ax[2].legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2)
+
+    return fig
+
 def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
     fig, ax = plt.subplots(1, 3, figsize=(12,4))
 
@@ -176,7 +210,7 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
     start_index = 400
-    
+
     if isinstance(model, SSMModel):
         states, gt_states, delta_time = test_rollout_ssm(model, list(test_data_loader), start_index=start_index)
     else:
@@ -189,15 +223,17 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     print(f"Open loop test ISE cm**2 s: {se.item()*0.01*100*100}")
     fig_positions = plot_rollout(states, gt_states, links=[30])
     fig_velocities = plot_velocities(states, gt_states, links=[30])
+    fig_positions_1d = plot_positions_1d(states, gt_states, links=[30])
     
     if save_figures:
         fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.svg")
         fig_positions.savefig(f"figures/open_loop_rollout_fig_positions_{additonal_info}.pdf")
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.svg")
         fig_velocities.savefig(f"figures/open_loop_rollout_fig_velocities_{additonal_info}.pdf")
-
-    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"tip_open_loop_rmse_{additonal_info}": rmse.item(), f"tip_open_loop_se_{additonal_info}": se.item(), f"tip_open_loop_ise_{additonal_info}": se.item()*0.01,
-               f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
+    
+    wandb.log({f"rollout_time_{additonal_info}":delta_time, f"tip_open_loop_rmse_{additonal_info}": rmse.item(), f"tip_open_loop_se_{additonal_info}": se.item(), f"tip_open_loop_ise_{additonal_info}": se.item()*0.01}, commit=False)
+    wandb.log({f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
+    wandb.log({f"open_loop_rollout_fig_positions_1d_{additonal_info}": wandb.Image(fig_positions_1d)}, commit=False)
 
     plt.close(fig_positions)
     plt.close(fig_velocities)
