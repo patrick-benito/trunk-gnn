@@ -157,13 +157,13 @@ def plot_positions_1d(states: torch.Tensor, states_gt: torch.Tensor, links):
     
     ax[0].set_title('$x$-Position Rollout')
     ax[0].set_xlabel('Time Step $k$')
-    ax[0].set_ylabel('Position $v_x$')
+    ax[0].set_ylabel('Position $x$')
     ax[1].set_title('$y$-Position Rollout')
     ax[1].set_xlabel('Time Step $k$')
-    ax[1].set_ylabel('Position $v_y$')
+    ax[1].set_ylabel('Position $y$')
     ax[2].set_title('$z$-Position Rollout')
     ax[2].set_xlabel('Time Step $k$')
-    ax[2].set_ylabel('Position $v_z$')
+    ax[2].set_ylabel('Position $z$')
     fig.subplots_adjust(bottom=0.25)
 
     # Place legends at the bottom
