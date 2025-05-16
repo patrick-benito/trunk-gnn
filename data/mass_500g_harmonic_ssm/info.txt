@@ -1,0 +1,3 @@
+policy = HarmonicPolicy(
+                frequency_range=[0.5,2.5], amplitude_range=[0.5,2.5], phase_range=[0.0,2*np.pi], num_segments=simulator.num_segments
+            )
