@@ -235,8 +235,7 @@ def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_inf
     wandb.log({f"open_loop_rollout_fig_positions_{additonal_info}": wandb.Image(fig_positions), f"open_loop_rollout_fig_velocities_{additonal_info}": wandb.Image(fig_velocities)}, commit=False)
     wandb.log({f"open_loop_rollout_fig_positions_1d_{additonal_info}": wandb.Image(fig_positions_1d)}, commit=False)
 
-    plt.close(fig_positions)
-    plt.close(fig_velocities)
+    plt.close("all")
     return rmse
 
 
