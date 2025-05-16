@@ -10,6 +10,6 @@ parameters:
   node_hidden_features:
     values: [50]
   learning_rate:
-    values: [1e-2, 1e-3, 1e-4]
+    values: [1e-1,1e-2, 1e-3, 1e-4, 1e-5]
   num_epochs:
     values: [100]
