@@ -11,3 +11,5 @@ parameters:
     values: [50]
   learning_rate:
     values: [1e-2, 1e-3, 1e-4]
+  num_epochs:
+    values: [100]
