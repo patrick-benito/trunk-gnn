@@ -62,7 +62,7 @@ class TrunkGraphDataset(InMemoryDataset):
     
     @property
     def processed_file_names(self):
-        return ['processed_data.pt', 'num_links.pt', 'link_step.pt']
+        return ['processed_data.pt', 'num_links.pt', 'link_step.pt', 'force_reload.pt'] # Forces reload every time
     
     def compute_metrics(self):
         metrics = {}
