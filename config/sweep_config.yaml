@@ -6,8 +6,10 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/overfit-raw', 'data/overfit-mn-1e-1', 'data/overfit-mn-1e0', 'data/overfit-mn-1e1', 'data/overfit-mn-1e2']
+    values: ['data/overfit-mn-1e1']
   node_hidden_features:
     values: [50]
   num_epochs:
     values: [1000]
+  learning_rate:
+    values: [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
