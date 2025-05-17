@@ -194,3 +194,6 @@ figures/
 # Wandb
 wandb/
 artifacts/
+
+# Lockfiles
+*.lock
