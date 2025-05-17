@@ -81,6 +81,14 @@ def add_virtual_node_at_origin(df):
 
     return df
 
+def offset_x_y(df):
+    for col in df.columns:
+        if col.startswith("x"):
+            df[col] -= 0.1
+        elif col.startswith("y"):
+            df[col] -= 0.1
+
+    return df
 
 def rename_columns(data):
     data.rename(columns={col: input_mapping_from_real_to_sim[col] for col in data.columns if col.startswith("phi")}, inplace=True)
@@ -95,7 +103,7 @@ def rename_columns(data):
 
 
 def filter_data(df):
-    filter_func = NonCausalTrunkFilter(num_nodes=4, measurement_noise=1e-1, position_process_noise=0, velocity_process_noise=1e1)
+    filter_func = NonCausalTrunkFilter(num_nodes=4, measurement_noise=1e3, position_process_noise=0, velocity_process_noise=1e1)
     real_data_array = get_data_array_from_dataframe(df)[:, :, 0::2] #TODO: not clean to slice here
     filtered_data = integrate_positions_from_velocity(real_data_array, filter_func.update_from_array(real_data_array))
     return get_dataframe_from_data_array(filtered_data, join_with=df)
@@ -114,9 +122,12 @@ def process_data(data, args=None):
             data[f"v{col}"] = data[col].diff() / 0.01 # use filter insteads
     
     if args.no_filter is False:
+        print("Filtering data...")
         # Filter data and inputs
         data = filter_data(data)
         data = filter_inputs(data)
+
+    offset_x_y(data)
 
     # compute new states
     for col in data.columns:

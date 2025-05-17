@@ -6,10 +6,8 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs_2']
+    values: ['data/overfit-raw', 'data/overfit-mn-1e-1', 'data/overfit-mn-1e0', 'data/overfit-mn-1e1', 'data/overfit-mn-1e2']
   node_hidden_features:
     values: [50]
-  learning_rate:
-    values: [1e-1,1e-2, 1e-3, 1e-4, 1e-5]
   num_epochs:
-    values: [100]
+    values: [1000]
