@@ -8,8 +8,6 @@ parameters:
   dataset_folder:
     values: ['data/overfit-mn-1e1']
   node_hidden_features:
-    values: [50]
+    values: [50, 100, 150]
   num_epochs:
     values: [1000]
-  weight_decay:
-    values: [1e-3, 1e-2, 1e-1, 1e0, 1e1]
