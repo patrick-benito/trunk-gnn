@@ -101,6 +101,12 @@ def rename_columns(data):
 
     return data
 
+def compute_euler_velocity(df, dt=0.01):
+    for col in df.columns:
+        if col.startswith(("x", "y", "z")):
+            df[f"v{col}"] = df[col].diff() / dt # Will be replaced by filter
+
+    return df
 
 def filter_data(df):
     filter_func = NonCausalTrunkFilter(num_nodes=4, measurement_noise=1e3, position_process_noise=0, velocity_process_noise=1e1)
@@ -116,11 +122,8 @@ def process_data(data, args=None):
     # Reset indexes of data
     data.reset_index(drop=True, inplace=True)
 
-    # compute velocity
-    for col in data.columns:
-        if col.startswith(("x", "y", "z")):
-            data[f"v{col}"] = data[col].diff() / 0.01 # use filter insteads
-    
+    data = compute_euler_velocity(data, dt=0.01)
+
     if args.no_filter is False:
         print("Filtering data...")
         # Filter data and inputs
@@ -128,6 +131,14 @@ def process_data(data, args=None):
         data = filter_inputs(data)
 
     offset_x_y(data)
+
+    if args.timestep is not None and args.timestep != 0.01:
+        step = int(args.timestep // 0.01)
+        if step * 0.01 != args.timestep:
+            raise ValueError(f"Time step {args.timestep} is not a multiple of 0.01")
+        
+        data = data.iloc[::step].copy()
+        data = compute_euler_velocity(data, dt=args.timestep)
 
     # compute new states
     for col in data.columns:
@@ -149,6 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--folder", type=str, default="data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs", help="Folder containing the data")
     parser.add_argument("--type", type=str, default="train", help="Data type (train, test)")
     parser.add_argument("--no-filter", action="store_true", help="Do not filter data")
+    parser.add_argument("--timestep", type=float, default=0.01, help="Time step for the data")
     args = parser.parse_args()
 
     folder = os.path.join(args.folder, args.type)
