@@ -6,7 +6,7 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/overfit-mn-1e1']
+    values: ['data/overfit-mn-1e-1-short']
   node_hidden_features:
     values: [50]
   weight_decay:

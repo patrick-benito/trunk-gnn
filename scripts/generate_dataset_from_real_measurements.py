@@ -86,7 +86,7 @@ def offset_x_y(df):
         if col.startswith("x"):
             df[col] -= 0.1
         elif col.startswith("y"):
-            df[col] -= 0.1
+            df[col] -= 0.105
 
     return df
 
