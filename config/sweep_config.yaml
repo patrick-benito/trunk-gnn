@@ -10,4 +10,4 @@ parameters:
   node_hidden_features:
     values: [50]
   weight_decay:
-    values: [1e-5]
+    values: [1e-9]
