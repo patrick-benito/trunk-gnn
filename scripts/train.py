@@ -56,9 +56,7 @@ def main():
     print(f"Initialized wandb with config: {wandb.config}")
 
     dataset = TrunkGraphDataset(os.path.join(wandb.config["dataset_folder"],"train"), device=device, link_step=wandb.config["link_step"])
-    train_data_set, validation_data_set, test_data_set = dataset_split(
-        dataset, [0.98, 0.01, 0.01]
-    )
+    train_data_set, validation_data_set, test_data_set = dataset.copy(), dataset.copy(), dataset.copy()
     
     if wandb.config["model"] == "gnn":
         print("Using GNN model")
