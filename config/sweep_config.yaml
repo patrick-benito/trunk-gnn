@@ -6,9 +6,8 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/overfit-mn-1e1-short-05-dt']
+    values: ['data/mass_100g_harmonic_test_1',
+             'data/mass_100g_harmonic_test_short']
   num_epochs:
     values: [2000]
-  dt:
-    values: [0.05]
   
