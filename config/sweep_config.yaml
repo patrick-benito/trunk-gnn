@@ -6,8 +6,8 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/mass_100g_harmonic_test_1',
-             'data/mass_100g_harmonic_test_short']
+    values: ['data/mass_100g_harmonic',
+             'data/mass_100g_harmonic_short']
   num_epochs:
     values: [2000]
   
