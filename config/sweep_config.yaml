@@ -9,6 +9,8 @@ parameters:
     values: ['data/real-350-1']
   num_epochs:
     values: [1000]
-  weight_decay:
-    values: [1e-6, 1e-8]
+  edge_hidden_features:
+    values: [50, 200, 300]
+  edge_num_hidden_layers:
+    values: [4, 6]
   
