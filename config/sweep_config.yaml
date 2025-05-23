@@ -6,9 +6,9 @@ parameters:
   model:
     values: ['gnn']
   dataset_folder:
-    values: ['data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs_2']
+    values: ['data/real-350-1']
   num_epochs:
-    values: [2000]
+    values: [1000]
   weight_decay:
-    values: [1e-7, 1e-8, 1e-9]
+    values: [1e-7]
   
