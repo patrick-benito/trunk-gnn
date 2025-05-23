@@ -118,6 +118,15 @@ def filter_inputs(df):
     filter_func = NonCausalTrunkFilter(num_nodes=3, dim_x=4, dim_z=2, measurement_noise=1e-1, position_process_noise=0, velocity_process_noise=1e1)
     return get_dataframe_from_input_array(filter_func.update_from_array(get_input_array_from_dataframe(df))[:,:,0::2], join_with=df)
 
+def filter_acceleration(df):
+    print("Filter acceleration")
+    for i in range(1,5):
+        for axis in ['x', 'y', 'z']:
+            mask = (df[f"v{axis}{i}"] - df[f"v{axis}{i}_new"]).abs() > 0.1
+            df = df[~mask]
+
+    return df
+
 def process_data(data, args=None):
     # Reset indexes of data
     data.reset_index(drop=True, inplace=True)
@@ -128,6 +137,8 @@ def process_data(data, args=None):
         print("Filtering data...")
         # Filter data and inputs
         data = filter_data(data)
+
+    if args.no_filter_inputs is False:
         data = filter_inputs(data)
 
     offset_x_y(data)
@@ -144,6 +155,9 @@ def process_data(data, args=None):
     for col in data.columns:
         if col.startswith(("x", "y", "z", "v")):
             data[f'{col}_new'] = data[col].shift(-1)
+    
+    if args.type == "train":
+        data = filter_acceleration(data)
 
     data = data.iloc[1:-1] # remove first and last row
     data = data[(data['u1'] != 0) | (data['u2'] != 0) | (data['u3'] != 0) | (data['u4'] != 0) | (data['u5'] != 0) | (data['u6'] != 0)]
@@ -151,7 +165,7 @@ def process_data(data, args=None):
     data.dropna() # remove idle states
     data = data[sorted(data.columns)] # Sort columns alphabetically
 
-    
+    print(f"Processed dataset of length: {len(data)}")
     return data
 
 
@@ -160,6 +174,7 @@ if __name__ == "__main__":
     parser.add_argument("--folder", type=str, default="data/long_rollouts_100_max_amplitude_80_policy_harmonic_inputs", help="Folder containing the data")
     parser.add_argument("--type", type=str, default="train", help="Data type (train, test)")
     parser.add_argument("--no-filter", action="store_true", help="Do not filter data")
+    parser.add_argument("--no-filter-inputs", action="store_true", help="Do not filter inputs")
     parser.add_argument("--timestep", type=float, default=0.01, help="Time step for the data")
     args = parser.parse_args()
 
