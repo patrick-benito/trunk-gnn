@@ -168,7 +168,7 @@ def plot_velocities(states: torch.Tensor, states_gt: torch.Tensor, links):
 
 
 def open_loop_test(model: torch.nn.Module, test_data_loader: Data, additonal_info: str = "", save_figures = False) -> torch.Tensor:
-    states, gt_states, delta_time = test_rollout(model, list(test_data_loader), start_index=0)
+    states, gt_states, delta_time = test_rollout(model, list(test_data_loader), start_index=400)
     rmse = open_loop_link_rmse(states, gt_states, links = [30])
     se = open_loop_link_se(states, gt_states, links = [30])
 

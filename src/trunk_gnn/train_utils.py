@@ -96,7 +96,7 @@ def epoch(
     device: torch.device,
     gradient_clipping_max_norm: Optional[float] = None
 ):
-    mask_vel = torch.diag(torch.tensor([1.0, 1.0, 1.0])) #Penalizing z-velocity by x10 due to its scale
+    mask_vel = torch.diag(torch.tensor([1.0, 1.0, 2.0])) #Penalizing z-velocity by x2 due to its scale
     mask = torch.vstack((torch.eye(3)*0, mask_vel)).to(device)
 
     # Training
